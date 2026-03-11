@@ -61,6 +61,9 @@ COPY --from=builder /app/config ./config
 RUN npm install --only=production --legacy-peer-deps --no-audit --no-fund || \
     npm install --production --legacy-peer-deps --no-audit --no-fund
 
+# Create content directory for local file storage
+RUN mkdir -p /app/content && chmod 755 /app/content
+
 # Expose API port
 EXPOSE 8084
 
