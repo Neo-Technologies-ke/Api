@@ -20,7 +20,7 @@ export class DomainRepo extends ConfiguredRepo<Domain> {
 
   public loadPairs() {
     return TypedDB.query(
-      "select d.domainName as host, concat(c.subDomain, '.b1.church:443') as dial from domains d inner join churches c on c.id=d.churchId WHERE d.domainName NOT like '%www.%';",
+      "select d.domainName as host, concat(c.subDomain, '.lifereformationcentre.org:443') as dial from domains d inner join churches c on c.id=d.churchId WHERE d.domainName NOT like '%www.%';",
       []
     );
   }

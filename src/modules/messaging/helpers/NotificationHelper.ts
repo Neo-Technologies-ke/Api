@@ -670,7 +670,7 @@ export class NotificationHelper {
     let emailSuccess = true;
     let emailError: string | undefined;
     try {
-      await EmailHelper.sendTemplatedEmail("support@churchapps.org", email, "B1.church", "https://admin.b1.church", title, content, "ChurchEmailTemplate.html", replyTo);
+      await EmailHelper.sendTemplatedEmail("support@churchapps.org", email, "Life Reformation Centre", "https://admin.lifereformationcentre.org", title, content, "ChurchEmailTemplate.html", replyTo);
       console.log("[NotificationHelper.sendEmailNotification] Email sent successfully to " + email);
     } catch (error) {
       emailSuccess = false;
