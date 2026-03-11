@@ -67,9 +67,9 @@ export class SermonController extends ContentBaseController {
           {
             id: "lessons",
             name: "Lessons",
-            description: "Free Lessons from Lessons.church",
-            image: "https://lessons.church/images/og-image.png",
-            childrenApi: "https://api.lessons.church/programs/public/tree"
+            description: "Free Lessons from Life Reformation Centre",
+            image: "https://lessons.lifereformationcentre.org/images/og-image.png",
+            childrenApi: "https://api.lifereformationcentre.org/lessons/programs/public/tree"
           },
           {
             id: "freeshow",
