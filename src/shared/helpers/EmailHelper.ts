@@ -83,7 +83,7 @@ export class EmailHelper {
       this.initialize();
 
       const mailSystem = process.env.MAIL_SYSTEM || 'smtp';
-      const fromAddress = options.from || Environment.supportEmail || 'noreply@churchapps.org';
+      const fromAddress = options.from || Environment.supportEmail || 'noreply@lifereformationcentre.org';
 
       if (mailSystem === 'ses' && this.sesClient) {
         return await this.sendViaSES(options, fromAddress);

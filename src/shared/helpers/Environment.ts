@@ -230,7 +230,7 @@ export class Environment extends EnvironmentBase {
     this.welcomeEmailOnRegistration = process.env.WELCOME_EMAIL_ON_REGISTRATION
       ? process.env.WELCOME_EMAIL_ON_REGISTRATION === "true"
       : config.welcomeEmailOnRegistration !== false;
-    this.supportEmail = process.env.SUPPORT_EMAIL || config.supportEmail || "support@churchapps.org";
+    this.supportEmail = process.env.SUPPORT_EMAIL || config.supportEmail || "support@lifereformationcentre.org";
     this.b1AdminRoot = process.env.B1ADMIN_ROOT || config.b1AdminRoot || "https://admin.lifereformationcentre.org";
     this.mailSystem = process.env.MAIL_SYSTEM || config.mailSystem || "";
 
