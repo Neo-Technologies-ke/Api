@@ -83,6 +83,7 @@ layers/
 
 # VPS Deployment - Sensitive Files (DO NOT COMMIT)
 .passwords.txt
+*.passwords.txt
 *_DEPLOYMENT*.md
 DEPLOYMENT_*.md
 VPS_*.md
@@ -100,3 +101,6 @@ fix-docker-compose.sh
 init-all-databases.sql
 nginx-custom.conf
 deployment-package/
+
+# Backup files (DO NOT COMMIT)
+*.backup-*
