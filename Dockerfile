@@ -61,6 +61,18 @@ COPY --from=builder /app/config ./config
 RUN npm install --only=production --legacy-peer-deps --no-audit --no-fund || \
     npm install --production --legacy-peer-deps --no-audit --no-fund
 
+# Patch apihelper LoggingHelper to skip CloudWatch when no AWS credentials configured
+RUN node -e " \
+  const fs = require('fs'); \
+  const f = '/app/node_modules/@churchapps/apihelper/dist/helpers/LoggingHelper.js'; \
+  let c = fs.readFileSync(f, 'utf8'); \
+  c = c.replace( \
+    'if (EnvironmentBase.appEnv === \"staging\")\n            this.logDestination = \"cloudwatch\";\n        else if (EnvironmentBase.appEnv === \"prod\")\n            this.logDestination = \"cloudwatch\";', \
+    'if (EnvironmentBase.appEnv === \"prod\" && process.env.AWS_REGION && process.env.AWS_ACCESS_KEY_ID)\n            this.logDestination = \"cloudwatch\";' \
+  ); \
+  fs.writeFileSync(f, c); \
+"
+
 # Create content directory for local file storage
 RUN mkdir -p /app/content && chmod 755 /app/content
 
