@@ -102,5 +102,15 @@ init-all-databases.sql
 nginx-custom.conf
 deployment-package/
 
+# Data and script files (DO NOT COMMIT)
+*.mjs
+*.csv
+*.xlsx
+*.xls
+*.Identifier
+.DS_Store
+Thumbs.db
+desktop.ini
+
 # Backup files (DO NOT COMMIT)
 *.backup-*
