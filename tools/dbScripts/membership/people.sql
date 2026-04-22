@@ -13,7 +13,7 @@ CREATE TABLE `people` (
   `suffix` varchar(10) DEFAULT NULL,
   `birthDate` datetime DEFAULT NULL,
   `gender` varchar(11) DEFAULT NULL,
-  `maritalStatus` varchar(10) DEFAULT NULL,
+  `maritalStatus` varchar(20) DEFAULT NULL,
   `anniversary` datetime DEFAULT NULL,
   `membershipStatus` varchar(50) DEFAULT NULL,
   `homePhone` varchar(21) DEFAULT NULL,

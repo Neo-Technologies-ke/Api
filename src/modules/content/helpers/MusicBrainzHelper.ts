@@ -10,7 +10,7 @@ export class MusicBrainzHelper {
 
   static async lookupInner(query: string, originalTitle?: string, originalArtist?: string) {
     const url = `https://musicbrainz.org/ws/2/recording/?query=${encodeURIComponent(query)}&fmt=json`;
-    const userAgent = "ChurchApps https://churchapps.org/";
+    const userAgent = "Life Reformation Centre https://lifereformationcentre.org/";
     const response = await fetch(url, { headers: { "User-Agent": userAgent } });
     if (response.ok) {
       const data = await response.json();
@@ -53,7 +53,7 @@ export class MusicBrainzHelper {
 
   static async load(id: string) {
     const url = `https://musicbrainz.org/ws/2/recording/${encodeURIComponent(id)}?fmt=json&inc=artist-credits+isrcs+releases`;
-    const userAgent = "ChurchApps https://churchapps.org/";
+    const userAgent = "Life Reformation Centre https://lifereformationcentre.org/";
     const response = await fetch(url, { headers: { "User-Agent": userAgent } });
     if (response.ok) {
       const data = await response.json();

@@ -3,7 +3,7 @@ import express from "express";
 import { DoingBaseController } from "./DoingBaseController.js";
 import { PlanItem } from "../models/index.js";
 
-const LESSONS_API_BASE = "https://api.lessons.church";
+const LESSONS_API_BASE = "https://api.lifereformationcentre.org/lessons";
 
 interface FeedAction {
   id?: string;

@@ -80,3 +80,37 @@ layers/
 *.pem
 *.key
 *.crt
+
+# VPS Deployment - Sensitive Files (DO NOT COMMIT)
+.passwords.txt
+*.passwords.txt
+*_DEPLOYMENT*.md
+DEPLOYMENT_*.md
+VPS_*.md
+QUICK_START.md
+README_DEPLOYMENT.md
+docker-compose.*.yml
+deploy.sh
+init-databases.sh
+backup-databases.sh
+restore-databases.sh
+monitor.sh
+quick-deploy.sh
+update-env-passwords.sh
+fix-docker-compose.sh
+init-all-databases.sql
+nginx-custom.conf
+deployment-package/
+
+# Data and script files (DO NOT COMMIT)
+*.mjs
+*.csv
+*.xlsx
+*.xls
+*.Identifier
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backup files (DO NOT COMMIT)
+*.backup-*

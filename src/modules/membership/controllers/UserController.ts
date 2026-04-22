@@ -208,7 +208,13 @@ export class UserController extends MembershipBaseController {
         user.password = bcrypt.hashSync(tempPassword, 10);
         user.authGuid = v4();
         user = await this.repos.user.save(user);
-        await UserHelper.sendWelcomeEmail(user.email, `/login?auth=${user.authGuid}&timestamp=${timestamp}`, null, null);
+        if (Environment.welcomeEmailOnRegistration) {
+          try {
+            await UserHelper.sendWelcomeEmail(user.email, `/login?auth=${user.authGuid}&timestamp=${timestamp}`, null, null);
+          } catch (err) {
+            console.error(`Welcome email failed during loadOrCreate: ${err}`);
+          }
+        }
         // Create userChurch records for matching people in groups
         await UserChurchHelper.createForNewUser(user.id, user.email);
       }
@@ -234,17 +240,22 @@ export class UserController extends MembershipBaseController {
         user.registrationDate = new Date();
         user.password = bcrypt.hashSync(tempPassword, 10);
 
-        try {
-          const timestamp = Date.now();
-          await UserHelper.sendWelcomeEmail(register.email, `/login?auth=${user.authGuid}&timestamp=${timestamp}`, register.appName, register.appUrl);
+        const timestamp = Date.now();
+        if (Environment.welcomeEmailOnRegistration) {
+          try {
+            await UserHelper.sendWelcomeEmail(register.email, `/login?auth=${user.authGuid}&timestamp=${timestamp}`, register.appName, register.appUrl);
+          } catch (err) {
+            console.error(`Welcome email failed during registration: ${err}`);
+          }
+        }
 
-          if (Environment.emailOnRegistration) {
+        if (Environment.emailOnRegistration) {
+          try {
             const emailBody = "Name: " + register.firstName + " " + register.lastName + "<br/>Email: " + register.email + "<br/>App: " + register.appName;
             await EmailHelper.sendTemplatedEmail(Environment.supportEmail, Environment.supportEmail, register.appName, register.appUrl, "New User Registration", emailBody);
+          } catch (err) {
+            console.error(`Registration notification email failed: ${err}`);
           }
-        } catch (err) {
-          return this.json({ errors: [err.toString()] });
-          // return this.json({ errors: ["Email address does not exist."] })
         }
         const userCount = await this.repos.user.loadCount();
 

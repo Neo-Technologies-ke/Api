@@ -369,6 +369,7 @@ export class ChurchController extends MembershipBaseController {
       let { churchId } = req.body;
       if (req.body.subDomain && !churchId) {
         const selectedChurch: Church = await this.repos.church.loadBySubDomain(req.body.subDomain);
+        if (!selectedChurch) return this.json({ errors: [{ message: `Church not found for subdomain: ${req.body.subDomain}` }] }, 404);
         churchId = selectedChurch.id;
       }
       const userChurch = await this.fetchChurchPermissions(au, churchId);
