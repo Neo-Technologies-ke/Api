@@ -1,0 +1,43 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - vps_setup
+  workflow_dispatch:
+
+jobs:
+  deploy-staging:
+    name: Deploy Staging
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Deploy staging-b1api on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            git -C /home/trix/churchapps/B1Api/Api pull origin vps_setup
+            cd /home/trix/churchapps
+            docker compose -f docker-compose.3env.yml build --no-cache staging-b1api
+            docker compose -f docker-compose.3env.yml up -d --force-recreate staging-b1api
+
+  deploy-prod:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    environment: production
+    needs: deploy-staging
+    steps:
+      - name: Deploy prod-b1api on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            git -C /home/trix/churchapps/B1Api/Api pull origin vps_setup
+            cd /home/trix/churchapps
+            docker compose -f docker-compose.3env.yml build --no-cache prod-b1api
+            docker compose -f docker-compose.3env.yml up -d --force-recreate prod-b1api
