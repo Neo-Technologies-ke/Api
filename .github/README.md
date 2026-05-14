@@ -4,7 +4,7 @@ This directory contains GitHub Actions workflows for the API modular monolith.
 
 ## Workflows Overview
 
-### 🔄 Continuous Integration
+### Continuous Integration
 
 #### `ci.yml` - Build and Test
 
@@ -17,7 +17,7 @@ This directory contains GitHub Actions workflows for the API modular monolith.
   - Code coverage reporting
   - Security vulnerability scanning
 
-### 🚀 Deployment Workflows
+### Deployment Workflows
 
 #### `deploy-demo.yml` - Demo Environment
 
@@ -50,7 +50,7 @@ This directory contains GitHub Actions workflows for the API modular monolith.
   - Rollback procedures
   - Critical alert notifications
 
-### 🛠️ Utility Workflows
+### Utility Workflows
 
 #### `database-migration.yml` - Database Operations
 
@@ -124,28 +124,28 @@ Database connection strings are managed via environment variables or AWS Paramet
 
 ## Workflow Features
 
-### 🔒 Security
+###  Security
 
 - Secret scanning
 - Dependency vulnerability checks
 - Production deployment protection
 - IAM role separation by environment
 
-### 📊 Monitoring
+### Monitoring
 
 - Health checks every 15 minutes
 - Performance monitoring
 - Slack alerting
 - Deployment status tracking
 
-### 🔄 Automation
+###  Automation
 
 - Automated dependency updates
 - Demo environment cleanup
 - Database migration workflows
 - Build artifact caching
 
-### 🧪 Testing
+###  Testing
 
 - Multi-environment testing
 - Integration test suites
