@@ -12,19 +12,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_KEY }}" | base64 -d > ~/.ssh/deploy_key
+          echo "$VPS_SSH_KEY" | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
       - name: Deploy staging-b1api on VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
         run: |
           ssh -i ~/.ssh/deploy_key \
             -o StrictHostKeyChecking=no \
-            -o BatchMode=yes \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            'git -C /home/trix/churchapps/B1Api/Api pull origin vps_setup && cd /home/trix/churchapps && docker compose -f docker-compose.3env.yml build --no-cache staging-b1api && docker compose -f docker-compose.3env.yml up -d --force-recreate staging-b1api'
+            -o UserKnownHostsFile=/dev/null \
+            -o LogLevel=ERROR \
+            ${VPS_USER}@${VPS_HOST} \
+            'git -C /home/trix/churchapps/B1Api pull origin vps_setup && cd /home/trix/churchapps && docker compose -f docker-compose.3env.yml build --no-cache staging-b1api && docker compose -f docker-compose.3env.yml up -d --force-recreate staging-b1api'
 
   deploy-prod:
     name: Deploy Production
@@ -32,16 +37,21 @@ jobs:
     needs: deploy-staging
     steps:
       - name: Setup SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_KEY }}" | base64 -d > ~/.ssh/deploy_key
+          echo "$VPS_SSH_KEY" | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
       - name: Deploy prod-b1api on VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
         run: |
           ssh -i ~/.ssh/deploy_key \
             -o StrictHostKeyChecking=no \
-            -o BatchMode=yes \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            'git -C /home/trix/churchapps/B1Api/Api pull origin vps_setup && cd /home/trix/churchapps && docker compose -f docker-compose.3env.yml build --no-cache prod-b1api && docker compose -f docker-compose.3env.yml up -d --force-recreate prod-b1api'
+            -o UserKnownHostsFile=/dev/null \
+            -o LogLevel=ERROR \
+            ${VPS_USER}@${VPS_HOST} \
+            'git -C /home/trix/churchapps/B1Api pull origin vps_setup && cd /home/trix/churchapps && docker compose -f docker-compose.3env.yml build --no-cache prod-b1api && docker compose -f docker-compose.3env.yml up -d --force-recreate prod-b1api'
