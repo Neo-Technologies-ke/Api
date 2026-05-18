@@ -129,6 +129,19 @@ export class UserController extends MembershipBaseController {
     return roleUserChurches;
   }
 
+  @httpPost("/checkEmail", body("email").exists().isEmail().trim().normalizeEmail({ gmail_remove_dots: false }).withMessage("enter a valid email address"))
+  public async checkEmail(req: express.Request<{}, {}, { email: string }>, res: express.Response): Promise<any> {
+    return this.actionWrapperAnon(req, res, async () => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const user = await this.repos.user.loadByEmail(req.body.email);
+      return this.json({ exists: user !== null }, 200);
+    });
+  }
+
   @httpPost("/verifyCredentials", ...emailPasswordValidation)
   public async verifyCredentials(req: express.Request<{}, {}, EmailPassword>, res: express.Response): Promise<any> {
     return this.actionWrapperAnon(req, res, async () => {
