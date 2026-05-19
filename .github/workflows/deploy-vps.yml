@@ -28,6 +28,8 @@ jobs:
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             -o LogLevel=ERROR \
+            -o ServerAliveInterval=60 \
+            -o ServerAliveCountMax=10 \
             ${VPS_USER}@${VPS_HOST} \
             'git -C /home/trix/churchapps/B1Api reset --hard HEAD && git -C /home/trix/churchapps/B1Api clean -fd && git -C /home/trix/churchapps/B1Api pull origin vps_setup && cd /home/trix/churchapps && docker compose -f docker-compose.3env.yml build --no-cache staging-b1api && docker compose -f docker-compose.3env.yml up -d --force-recreate staging-b1api'
 
@@ -53,5 +55,7 @@ jobs:
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             -o LogLevel=ERROR \
+            -o ServerAliveInterval=60 \
+            -o ServerAliveCountMax=10 \
             ${VPS_USER}@${VPS_HOST} \
             'git -C /home/trix/churchapps/B1Api reset --hard HEAD && git -C /home/trix/churchapps/B1Api clean -fd && git -C /home/trix/churchapps/B1Api pull origin vps_setup && cd /home/trix/churchapps && docker compose -f docker-compose.3env.yml build --no-cache prod-b1api && docker compose -f docker-compose.3env.yml up -d --force-recreate prod-b1api'
