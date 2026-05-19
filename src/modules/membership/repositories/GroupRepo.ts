@@ -2,6 +2,7 @@ import { injectable } from "inversify";
 import { TypedDB } from "../../../shared/infrastructure/TypedDB.js";
 import { Group } from "../models/index.js";
 import { ConfiguredRepo, RepoConfig } from "../../../shared/infrastructure/ConfiguredRepo.js";
+import { SlugHelper } from "@churchapps/apihelper";
 
 @injectable()
 export class GroupRepo extends ConfiguredRepo<Group> {
@@ -39,9 +40,12 @@ export class GroupRepo extends ConfiguredRepo<Group> {
     return TypedDB.queryOne("SELECT * FROM `groups` WHERE id=? AND churchId=? AND removed=0;", [id, churchId]);
   }
 
-  public loadPublicSlug(churchId: string, slug: string) {
+  public async loadPublicSlug(churchId: string, slug: string) {
     const sql = "SELECT * FROM `groups`" + " WHERE churchId = ? AND slug = ? AND removed=0";
-    return TypedDB.queryOne(sql, [churchId, slug]);
+    const result = await TypedDB.queryOne(sql, [churchId, slug]);
+    if (result) return result;
+    const idSql = "SELECT * FROM `groups`" + " WHERE churchId = ? AND id = ? AND removed=0";
+    return TypedDB.queryOne(idSql, [churchId, slug]);
   }
 
   public loadByTag(churchId: string, tag: string) {
@@ -109,7 +113,7 @@ export class GroupRepo extends ConfiguredRepo<Group> {
       meetingTime: row.meetingTime,
       meetingLocation: row.meetingLocation,
       labelArray: [],
-      slug: row.slug
+      slug: row.slug || SlugHelper.slugifyString(row.name)
     };
     row.labels?.split(",").forEach((label: string) => result.labelArray.push(label.trim()));
     return result;
