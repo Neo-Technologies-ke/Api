@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { EnvironmentBase } from "@churchapps/apihelper";
 import { DatabaseUrlParser } from "./DatabaseUrlParser.js";
+import { CustomEnvironment } from "./CustomEmailHelper.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -133,6 +134,7 @@ export class Environment extends EnvironmentBase {
 
     // Initialize app configurations
     await this.initializeAppConfigs(data);
+    CustomEnvironment.populateOAuth();
   }
 
   private static initializeModuleConfigs(config: any) {

@@ -1,4 +1,4 @@
-import { EmailHelper } from "@churchapps/apihelper";
+import { EmailHelper } from "../../../shared/helpers/CustomEmailHelper.js";
 import { Environment } from "../../../shared/helpers/Environment.js";
 import { Registration, RegistrationMember, Event } from "../models/index.js";
 

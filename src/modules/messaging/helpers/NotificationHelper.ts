@@ -1,4 +1,5 @@
-import { ArrayHelper, EmailHelper } from "@churchapps/apihelper";
+import { ArrayHelper } from "@churchapps/apihelper";
+import { EmailHelper } from "../../../shared/helpers/CustomEmailHelper.js";
 import { Conversation, DeliveryLog, Device, Message, PrivateMessage, Notification, NotificationPreference } from "../models/index.js";
 import { Repos } from "../repositories/index.js";
 import { DeliveryHelper } from "./DeliveryHelper.js";

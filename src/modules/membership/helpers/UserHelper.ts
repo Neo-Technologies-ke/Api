@@ -1,6 +1,7 @@
 import { LoginUserChurch, RolePermission } from "../models/index.js";
 import { Environment, permissionsList } from "./index.js";
-import { ArrayHelper, EmailHelper } from "@churchapps/apihelper";
+import { ArrayHelper } from "@churchapps/apihelper";
+import { EmailHelper } from "../../../shared/helpers/CustomEmailHelper.js";
 
 export class UserHelper {
   private static addAllPermissions(luc: LoginUserChurch) {

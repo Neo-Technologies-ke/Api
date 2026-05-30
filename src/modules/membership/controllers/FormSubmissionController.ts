@@ -2,9 +2,10 @@ import { controller, httpPost, httpGet, requestParam, httpDelete } from "inversi
 import express from "express";
 import { MembershipBaseController } from "./MembershipBaseController.js";
 import { FormSubmission, Answer, Form, Church } from "../models/index.js";
-import { Permissions, EmailHelper, Environment } from "../helpers/index.js";
+import { Permissions, Environment } from "../helpers/index.js";
 import { MemberPermission, Person } from "../models/index.js";
 import axios from "axios";
+import { EmailHelper } from "../../../shared/helpers/CustomEmailHelper.js";
 
 @controller("/membership/formsubmissions")
 export class FormSubmissionController extends MembershipBaseController {
