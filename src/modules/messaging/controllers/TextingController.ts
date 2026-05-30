@@ -4,7 +4,8 @@ import axios from "axios";
 import { MessagingBaseController } from "./MessagingBaseController.js";
 import { TextingProvider, SentText, DeliveryLog } from "../models/index.js";
 import { EncryptionHelper } from "@churchapps/apihelper";
-import { getProvider, type TextingProviderConfig } from "@churchapps/texting";
+// import { getProvider, type TextingProviderConfig } from "@churchapps/texting";
+import { getProvider, type TextingProviderConfig } from "../../../shared/texting/index.js";
 import { Environment } from "../../../shared/helpers/Environment.js";
 
 interface GroupMemberDetail {
@@ -243,7 +244,8 @@ export class TextingController extends MessagingBaseController {
       churchId,
       apiKey: p.apiKey ? EncryptionHelper.decrypt(p.apiKey) : "",
       apiSecret: p.apiSecret ? EncryptionHelper.decrypt(p.apiSecret) : "",
-      fromNumber: p.fromNumber
+      fromNumber: p.fromNumber,
+      username: p.username
     };
   }
 

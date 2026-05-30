@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 import { GivingBaseController } from "./GivingBaseController.js";
 import { Donation } from "../models/index.js";
 import { Permissions } from "../../../shared/helpers/Permissions.js";
-import { EmailHelper } from "@churchapps/apihelper";
+import { EmailHelper } from "../../../shared/helpers/CustomEmailHelper.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,6 +29,20 @@ export class DonationController extends GivingBaseController {
       const filePath = path.join(__dirname, "../../src/tools/templates/test.html");
       const result = { dir: __dirname, filePath, error };
       return result;
+    });
+  }
+
+  @httpGet("/kpis")
+  public async getKpis(req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (au) => {
+      if (!au.checkAccess(Permissions.donations.viewSummary)) return this.json({}, 401);
+      else {
+        const startDate = req.query.startDate ? new Date(req.query.startDate.toString()) : new Date(2000, 1, 1);
+        const endDate = req.query.endDate ? new Date(req.query.endDate.toString()) : new Date();
+        const fundId = req.query.fundId?.toString() || "";
+        const result = await this.repos.donation.loadDashboardKpis(au.churchId, startDate, endDate, fundId || undefined);
+        return result || { totalGiving: 0, avgGift: 0, donorCount: 0, donationCount: 0 };
+      }
     });
   }
 

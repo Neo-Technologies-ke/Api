@@ -82,8 +82,14 @@ export class OAuthController extends MembershipBaseController {
         return this.handleDeviceCodeGrant(device_code, client_id, res);
       }
 
-      // All other grant types require client_secret validation
-      const client = (await this.repos.oAuthClient.loadByClientIdAndSecret(client_id, client_secret)) as any;
+      // Validate client: require client_secret for all grant types except refresh_token
+      // (public clients like device-flow TV apps may not have a client_secret)
+      let client;
+      if (grant_type === "refresh_token" && !client_secret) {
+        client = (await this.repos.oAuthClient.loadByClientId(client_id)) as any;
+      } else {
+        client = (await this.repos.oAuthClient.loadByClientIdAndSecret(client_id, client_secret)) as any;
+      }
       if (!client) return this.json({ error: "invalid_client" }, 400);
 
       if (grant_type === "authorization_code") {
@@ -120,14 +126,14 @@ export class OAuthController extends MembershipBaseController {
         await UserHelper.replaceDomainAdminPermissions([loginUserChurch]);
         UserHelper.addAllReportingPermissions([loginUserChurch]);
 
-        // Create access token
+        // Create access token (refresh token expires in 90 days)
         const token: OAuthToken = {
           clientId: client.clientId,
           userChurchId: authCode.userChurchId,
-          accessToken: AuthenticatedUser.getCombinedApiJwt(user, loginUserChurch),
+          accessToken: AuthenticatedUser.getCombinedApiJwt(user, loginUserChurch, "7 days"),
           refreshToken: UniqueIdHelper.shortId(),
           scopes: authCode.scopes,
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000 * 12) // 12 hours
+          expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days
         };
         await this.repos.oAuthToken.save(token);
 
@@ -137,7 +143,7 @@ export class OAuthController extends MembershipBaseController {
         return this.json({
           access_token: token.accessToken,
           token_type: "Bearer",
-          expires_in: 3600 * 12,
+          expires_in: 7 * 24 * 3600, // 7 days (matches JWT expiration)
           created_at: Math.floor(Date.now() / 1000),
           refresh_token: token.refreshToken,
           scope: token.scopes
@@ -172,14 +178,14 @@ export class OAuthController extends MembershipBaseController {
         await UserHelper.replaceDomainAdminPermissions([loginUserChurch]);
         UserHelper.addAllReportingPermissions([loginUserChurch]);
 
-        // Create new access token with proper JWT
+        // Create new access token (refresh token expires in 90 days)
         const token: OAuthToken = {
           clientId: client.clientId,
           userChurchId: oldToken.userChurchId,
-          accessToken: AuthenticatedUser.getCombinedApiJwt(user, loginUserChurch),
+          accessToken: AuthenticatedUser.getCombinedApiJwt(user, loginUserChurch, "7 days"),
           refreshToken: UniqueIdHelper.shortId(),
           scopes: oldToken.scopes,
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000 * 12) // 12 hours
+          expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days
         };
         await this.repos.oAuthToken.save(token);
 
@@ -189,7 +195,7 @@ export class OAuthController extends MembershipBaseController {
           access_token: token.accessToken,
           token_type: "Bearer",
           created_at: Math.floor(Date.now() / 1000),
-          expires_in: 3600 * 12,
+          expires_in: 7 * 24 * 3600, // 7 days (matches JWT expiration)
           refresh_token: token.refreshToken,
           scope: token.scopes
         });
@@ -310,17 +316,17 @@ export class OAuthController extends MembershipBaseController {
         UserHelper.addAllReportingPermissions([loginUserChurch]);
 
         // Create access token
-        const accessToken = AuthenticatedUser.getCombinedApiJwt(user, loginUserChurch);
+        const accessToken = AuthenticatedUser.getCombinedApiJwt(user, loginUserChurch, "7 days");
         const refreshToken = UniqueIdHelper.shortId();
 
-        // Store the refresh token for later use
+        // Store the refresh token (expires in 90 days)
         const token: OAuthToken = {
           clientId: dc.clientId,
           userChurchId: dc.userChurchId,
           accessToken,
           refreshToken,
           scopes: dc.scopes,
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000 * 12) // 12 hours
+          expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days
         };
         await this.repos.oAuthToken.save(token);
 
@@ -330,7 +336,7 @@ export class OAuthController extends MembershipBaseController {
         return this.json({
           access_token: accessToken,
           token_type: "Bearer",
-          expires_in: 3600 * 12, // 12 hours
+          expires_in: 7 * 24 * 3600, // 7 days (matches JWT expiration)
           refresh_token: refreshToken,
           scope: dc.scopes
         });
