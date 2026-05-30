@@ -1,5 +1,7 @@
+import { sql } from "kysely";
 import { Repos } from "../repositories/index.js";
 import { RepoManager } from "../../../shared/infrastructure/index.js";
+import { getDb } from "../db/index.js";
 import { UserChurch, Person } from "../models/index.js";
 
 export class UserChurchHelper {
@@ -29,24 +31,29 @@ export class UserChurchHelper {
     if (!email) return;
     const repos = await this.repos();
 
-    const churches = await repos.church.loadAll();
+    // Find people with exact email match who are in at least one group,
+    // in non-archived churches, excluding churches where a userChurch already exists.
+    const result = await sql<{ personId: string; churchId: string }>`
+      SELECT p.id as personId, p.churchId
+      FROM people p
+      INNER JOIN churches c ON c.id = p.churchId AND c.archivedDate IS NULL
+      INNER JOIN groupMembers gm ON gm.personId = p.id AND gm.churchId = p.churchId
+      INNER JOIN \`groups\` g ON g.id = gm.groupId AND g.removed = 0
+      LEFT JOIN userChurches uc ON uc.userId = ${userId} AND uc.churchId = p.churchId
+      WHERE LOWER(p.email) = LOWER(${email}) AND p.removed = 0 AND uc.id IS NULL
+      GROUP BY p.churchId, p.id
+    `.execute(getDb());
+    const matches = result.rows;
 
-    for (const church of churches) {
-      const existing = await repos.userChurch.loadByUserId(userId, church.id);
-      if (existing) continue;
-
-      const matchingPeople = await repos.person.searchEmail(church.id, email);
-      const exactMatches = matchingPeople.filter((p: Person) => p.email?.toLowerCase() === email.toLowerCase());
-
-      for (const person of exactMatches) {
-        const groups = await repos.groupMember.loadForPerson(church.id, person.id);
-        if (groups && groups.length > 0) {
-          const userChurch: UserChurch = { userId, churchId: church.id, personId: person.id };
-          await repos.userChurch.save(userChurch);
-          break;
-        }
-      }
+    // Pick one person per church (first match) and save userChurch records
+    const seenChurches = new Set<string>();
+    const savePromises: Promise<any>[] = [];
+    for (const match of matches) {
+      if (seenChurches.has(match.churchId)) continue;
+      seenChurches.add(match.churchId);
+      savePromises.push(repos.userChurch.save({ userId, churchId: match.churchId, personId: match.personId }));
     }
+    if (savePromises.length > 0) await Promise.all(savePromises);
   }
 
   // Scenario 3: When person email is updated, create userChurch if matching user exists and person is in groups

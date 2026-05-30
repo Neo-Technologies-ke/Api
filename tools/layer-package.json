@@ -9,7 +9,7 @@
     "@aws-sdk/client-ses": "^3.862.0",
     "@aws-sdk/client-ssm": "^3.862.0",
     "@aws-sdk/lib-storage": "^3.862.0",
-    "@churchapps/apihelper": "^0.5.2",
+    "@churchapps/apihelper": "^0.5.4",
     "@churchapps/content-providers": "0.1.0",
     "@churchapps/texting": "0.1.0",
     "@codegenie/serverless-express": "^4.15.0",
@@ -29,6 +29,7 @@
     "inversify-binding-decorators": "^4.0.0",
     "inversify-express-utils": "^6.5.0",
     "jsonwebtoken": "^9.0.2",
+    "kysely": "^0.28.15",
     "mysql2": "^3.14.3",
     "node-geocoder": "^4.4.1",
     "oauth-1.0a": "^2.2.6",
@@ -37,6 +38,7 @@
     "reflect-metadata": "^0.2.2",
     "stripe": "^17.4.0",
     "uuid": "^11.0.3",
+    "web-push": "^3.6.7",
     "ws": "^8.18.0",
     "youtube-captions-scraper": "^2.0.3"
   }

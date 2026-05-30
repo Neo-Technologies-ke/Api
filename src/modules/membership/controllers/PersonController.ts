@@ -237,14 +237,16 @@ export class PersonController extends MembershipBaseController {
   public async getDirectoryPeople(@requestParam("id") id: string, req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
       if (au.personId !== id && !au.checkAccess(Permissions.people.view)) {
+        if (!(await this.isMember(au.membershipStatus))) return this.json({}, 401);
         if (id === "all") {
-          return this.repos.person.convertAllToBasicModel(au.churchId, (await this.repos.person.loadAll(au.churchId)) as any[]);
+          const directoryVisibility = await this.getDirectoryVisibilitySetting(au.churchId);
+          const data = (await this.repos.person.loadMembersByVisibility(au.churchId, directoryVisibility)) as any[];
+          return this.repos.person.convertAllToBasicModel(au.churchId, data);
         } else {
           const data = await this.repos.person.load(au.churchId, id);
           if (!data) return null;
           const result = this.repos.person.convertToModelWithPermissions(au.churchId, data, false);
           return this.repos.person.convertToPreferenceModel(au.churchId, await this.checkVisibilityPref(id, au, result, this.repos));
-          // return result;
         }
       } else {
         if (id === "all") {
@@ -358,21 +360,15 @@ export class PersonController extends MembershipBaseController {
               });
               data = ArrayHelper.getAllOperator(data, "anniversaryMonth", c.value, c.operator, "number");
               break;
-            case "anniversary":
-              data = ArrayHelper.getAllOperator(data, "anniversary", c.value, c.operator);
-              break;
+            case "anniversary": data = ArrayHelper.getAllOperator(data, "anniversary", c.value, c.operator); break;
             case "phone":
               data = ArrayHelper.getAllOperator(data, "homePhone", c.value, c.operator)
                 .concat(ArrayHelper.getAllOperator(data, "workPhone", c.value, c.operator))
                 .concat(ArrayHelper.getAllOperator(data, "cellPhone", c.value, c.operator));
               data = ArrayHelper.getUnique(data);
               break;
-            case "id":
-              data = ArrayHelper.getAllOperatorArray(data, c.field, c.value.split(","), c.operator);
-              break;
-            default:
-              data = ArrayHelper.getAllOperator(data, c.field, c.value, c.operator);
-              break;
+            case "id": data = ArrayHelper.getAllOperatorArray(data, c.field, c.value.split(","), c.operator); break;
+            default: data = ArrayHelper.getAllOperator(data, c.field, c.value, c.operator); break;
           }
         });
         const result = this.repos.person.convertAllToModelWithPermissions(au.churchId, data, au.checkAccess(Permissions.people.edit));
@@ -456,6 +452,7 @@ export class PersonController extends MembershipBaseController {
       const directoryVisibility = await this.getDirectoryVisibilitySetting(au.churchId);
       const result: Person[] = [];
       people.forEach((p) => {
+        if (p.optedOut) return;
         if (this.shouldShowInDirectory(p.membershipStatus, directoryVisibility)) result.push(p);
       });
       return result;
@@ -530,11 +527,7 @@ export class PersonController extends MembershipBaseController {
 
   private async getPreferences(churchId: string, personId: string, repos: Repos) {
     const personPreferences: VisibilityPreference = await repos.visibilityPreference.loadForPerson(churchId, personId);
-    const pref = {
-      address: personPreferences?.address,
-      phone: personPreferences?.phoneNumber,
-      email: personPreferences?.email
-    };
+    const pref = { address: personPreferences?.address, phone: personPreferences?.phoneNumber, email: personPreferences?.email };
 
     if (!personPreferences?.address || !personPreferences?.phoneNumber || !personPreferences?.email) {
       const churchSettings = repos.setting.convertAllToModel(churchId, (await repos.setting.loadPublicSettings(churchId)) as any[]);

@@ -1,11 +1,12 @@
 import { controller, httpDelete, httpGet, httpPost } from "inversify-express-utils";
 import express from "express";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { body, oneOf, validationResult } from "express-validator";
-import { LoginRequest, User, ResetPasswordRequest, LoadCreateUserRequest, RegisterUserRequest, Church, EmailPassword, NewPasswordRequest, LoginUserChurch } from "../models/index.js";
+import { LoginRequest, User, ResetPasswordRequest, LoadCreateUserRequest, RegisterUserRequest, Church, EmailPassword, NewPasswordRequest, LoginUserChurch, Person } from "../models/index.js";
 import { AuthenticatedUser } from "../auth/index.js";
 import { MembershipBaseController } from "./MembershipBaseController.js";
-import { EmailHelper, UserHelper, UserChurchHelper, UniqueIdHelper, Environment, Permissions } from "../helpers/index.js";
+import { EmailHelper, UserHelper, UserChurchHelper, UniqueIdHelper, Environment, Permissions, AuditLogHelper } from "../helpers/index.js";
 import { v4 } from "uuid";
 import { ChurchHelper } from "../helpers/index.js";
 import { ArrayHelper } from "@churchapps/apihelper";
@@ -44,6 +45,13 @@ const setDisplayNameValidation = [
 
 const updateEmailValidation = [body("userId").optional().isString(), body("email").isEmail().trim().normalizeEmail({ gmail_remove_dots: false }).withMessage("enter a valid email address")];
 
+const VERIFICATION_CODE_TTL_MS = 15 * 60 * 1000;
+const VERIFICATION_MAX_ATTEMPTS = 5;
+
+function generateVerificationCode(): string {
+  return crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
+}
+
 @controller("/membership/users")
 export class UserController extends MembershipBaseController {
   @httpPost("/login")
@@ -67,8 +75,12 @@ export class UserController extends MembershipBaseController {
           }
         }
 
-        if (user === null) return this.denyAccess(["Login failed"]);
-        else {
+        if (user === null) {
+          const ip = AuditLogHelper.getClientIp(req);
+          const failEmail = req.body.email || req.body.authGuid || "(jwt)";
+          AuditLogHelper.logLogin(this.repos, "", "", false, ip, { email: failEmail, reason: "Invalid Credentials" });
+          return this.denyAccess(["Login failed"]);
+        } else {
           const userChurches = await this.getUserChurches(user.id);
 
           const churchesOnly: Church[] = [];
@@ -84,6 +96,11 @@ export class UserController extends MembershipBaseController {
           else {
             user.lastLogin = new Date();
             this.repos.user.save(user);
+            const ip = AuditLogHelper.getClientIp(req);
+            const selectedChurch = userChurches[0];
+            if (selectedChurch) {
+              AuditLogHelper.logLogin(this.repos, selectedChurch.church.id, user.id, true, ip, { email: user.email });
+            }
             return this.json(result, 200);
           }
         }
@@ -200,12 +217,13 @@ export class UserController extends MembershipBaseController {
 
       const { userId, userEmail, firstName, lastName } = req.body;
       let user: User;
+      let isNewUser = false;
 
       if (userId) user = await this.repos.user.load(userId);
       else user = await this.repos.user.loadByEmail(userEmail);
 
       if (!user) {
-        const timestamp = Date.now();
+        isNewUser = true;
         user = { email: userEmail, firstName, lastName };
         user.registrationDate = new Date();
         user.lastLogin = user.registrationDate;
@@ -213,17 +231,16 @@ export class UserController extends MembershipBaseController {
         user.password = bcrypt.hashSync(tempPassword, 10);
         user.authGuid = v4();
         user = await this.repos.user.save(user);
-        if (Environment.welcomeEmailOnRegistration) {
-          try {
-            await UserHelper.sendWelcomeEmail(user.email, `/login?auth=${user.authGuid}&timestamp=${timestamp}`, null, null);
-          } catch (err) {
-            console.error(`Welcome email failed during loadOrCreate: ${err}`);
-          }
-        }
+
+        const code = generateVerificationCode();
+        const codeHash = bcrypt.hashSync(code, 10);
+        await this.repos.user.updateVerification(user.id, codeHash, new Date(Date.now() + VERIFICATION_CODE_TTL_MS));
+        await UserHelper.sendWelcomeEmail(user.email, code, null, null);
         // Create userChurch records for matching people in groups
         await UserChurchHelper.createForNewUser(user.id, user.email);
       }
       user.password = null;
+      (user as any).isNewUser = isNewUser;
       return this.json(user, 200);
     });
   }
@@ -239,35 +256,61 @@ export class UserController extends MembershipBaseController {
 
       if (user) return res.status(400).json({ errors: ["user already exists"] });
       else {
+        const regStart = Date.now();
         const tempPassword = UniqueIdHelper.shortId();
         user = { email: register.email, firstName: register.firstName, lastName: register.lastName };
         user.authGuid = v4();
         user.registrationDate = new Date();
         user.password = bcrypt.hashSync(tempPassword, 10);
+        console.log("Register: bcrypt", Date.now() - regStart, "ms");
 
-        const timestamp = Date.now();
-        if (Environment.welcomeEmailOnRegistration) {
-          try {
-            await UserHelper.sendWelcomeEmail(register.email, `/login?auth=${user.authGuid}&timestamp=${timestamp}`, register.appName, register.appUrl);
-          } catch (err) {
-            console.error(`Welcome email failed during registration: ${err}`);
+        const code = generateVerificationCode();
+        const codeHash = bcrypt.hashSync(code, 10);
+
+        try {
+          const emailStart = Date.now();
+          const emailPromises: Promise<any>[] = [];
+          emailPromises.push(UserHelper.sendWelcomeEmail(register.email, code, register.appName, register.appUrl));
+
+          if (Environment.emailOnRegistration) {
+            try {
+              const emailBody = "Name: " + register.firstName + " " + register.lastName + "<br/>Email: " + register.email + "<br/>App: " + register.appName;
+              emailPromises.push(EmailHelper.sendTemplatedEmail(Environment.supportEmail, Environment.supportEmail, register.appName, register.appUrl, "New User Registration", emailBody));
+              await Promise.all(emailPromises);
+              console.log("Register: emails", Date.now() - emailStart, "ms");
+            } catch (err) {
+              console.error(`Registration notification email failed: ${err}`);
+            }
           }
+        } catch (err) {
+          return this.json({ errors: [err.toString()] });
+          // return this.json({ errors: ["Email address does not exist."] })
         }
 
-        if (Environment.emailOnRegistration) {
-          try {
-            const emailBody = "Name: " + register.firstName + " " + register.lastName + "<br/>Email: " + register.email + "<br/>App: " + register.appName;
-            await EmailHelper.sendTemplatedEmail(Environment.supportEmail, Environment.supportEmail, register.appName, register.appUrl, "New User Registration", emailBody);
-          } catch (err) {
-            console.error(`Registration notification email failed: ${err}`);
-          }
-        }
+        let stepStart = Date.now();
         const userCount = await this.repos.user.loadCount();
-
         user = await this.repos.user.save(user);
+        await this.repos.user.updateVerification(user.id, codeHash, new Date(Date.now() + VERIFICATION_CODE_TTL_MS));
+        console.log("Register: save user", Date.now() - stepStart, "ms");
 
         // Create userChurch records for matching people in groups
+        stepStart = Date.now();
         await UserChurchHelper.createForNewUser(user.id, user.email);
+        console.log("Register: createForNewUser", Date.now() - stepStart, "ms");
+
+        // Link pre-selected church from People record match (even if person isn't in a group)
+        if (register.churchId) {
+          stepStart = Date.now();
+          const existingUC = await this.repos.userChurch.loadByUserId(user.id, register.churchId);
+          if (!existingUC) {
+            const matchingPeople = await this.repos.person.searchEmail(register.churchId, user.email);
+            const exactMatch = matchingPeople.find((p: Person) => p.contactInfo?.email?.toLowerCase() === user.email.toLowerCase());
+            if (exactMatch) {
+              await this.repos.userChurch.save({ userId: user.id, churchId: register.churchId, personId: exactMatch.id });
+            }
+          }
+          console.log("Register: link churchId", Date.now() - stepStart, "ms");
+        }
 
         // Add first user to server admins group
         if (userCount === 0) {
@@ -275,6 +318,7 @@ export class UserController extends MembershipBaseController {
             this.repos.roleMember.save({ roleId: roles[0].id, userId: user.id, addedBy: user.id });
           });
         }
+        console.log("Register: total", Date.now() - regStart, "ms");
       }
       user.password = null;
       return this.json(user, 200);
@@ -291,6 +335,8 @@ export class UserController extends MembershipBaseController {
           const hashedPass = bcrypt.hashSync(req.body.newPassword, 10);
           user.password = hashedPass;
           await this.repos.user.save(user);
+          const ip = AuditLogHelper.getClientIp(req);
+          AuditLogHelper.log(this.repos, "", user.id, "security", "password_changed", "user", user.id, { email: user.email, method: "authGuid" }, ip);
           return { success: true };
         } else return { success: false };
       } catch (e) {
@@ -315,12 +361,14 @@ export class UserController extends MembershipBaseController {
         const user = await this.repos.user.loadByEmail(req.body.userEmail);
         if (user === null) return this.json({ emailed: false }, 200);
         else {
-          user.authGuid = v4();
+          const code = generateVerificationCode();
+          const codeHash = bcrypt.hashSync(code, 10);
           const promises = [] as Promise<any>[];
-          const timestamp = Date.now();
-          promises.push(this.repos.user.save(user));
-          promises.push(UserHelper.sendForgotEmail(user.email, `/login?auth=${user.authGuid}&timestamp=${timestamp}`, req.body.appName, req.body.appUrl));
+          promises.push(this.repos.user.updateVerification(user.id, codeHash, new Date(Date.now() + VERIFICATION_CODE_TTL_MS)));
+          promises.push(UserHelper.sendForgotEmail(user.email, code, req.body.appName, req.body.appUrl));
           await Promise.all(promises);
+          const ip = AuditLogHelper.getClientIp(req);
+          AuditLogHelper.log(this.repos, "", user.id, "security", "password_reset", "user", user.id, { email: user.email }, ip);
           return this.json({ emailed: true }, 200);
         }
       } catch (e) {
@@ -330,6 +378,79 @@ export class UserController extends MembershipBaseController {
         this.logger.error(e);
         return this.error([e.toString()]);
       }
+    });
+  }
+
+  @httpPost("/verifyCode", body("email").isEmail().trim().normalizeEmail({ gmail_remove_dots: false }).withMessage("enter a valid email address"), body("code").isString().isLength({ min: 6, max: 6 }).withMessage("enter a 6-digit code"))
+  public async verifyCode(req: express.Request<{}, {}, { email: string; code: string }>, res: express.Response): Promise<any> {
+    return this.actionWrapperAnon(req, res, async () => {
+      try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+          return res.status(400).json({ errors: errors.array() });
+        }
+
+        const user = await this.repos.user.loadByEmail(req.body.email);
+        if (user === null) return this.json({ errors: ["invalid code"] }, 400);
+        if (!user.verificationCode || !user.verificationExpires) return this.json({ errors: ["invalid code"] }, 400);
+        if (new Date(user.verificationExpires).getTime() < Date.now()) return this.json({ errors: ["code expired"] }, 400);
+
+        const attempts = await this.repos.user.incrementVerificationAttempts(user.id);
+        const ip = AuditLogHelper.getClientIp(req);
+        if (attempts > VERIFICATION_MAX_ATTEMPTS) {
+          await this.repos.user.clearVerification(user.id);
+          AuditLogHelper.log(this.repos, "", user.id, "security", "verification_locked", "user", user.id, { email: user.email }, ip);
+          return this.json({ errors: ["too many attempts"] }, 429);
+        }
+
+        const match = await bcrypt.compare(req.body.code, user.verificationCode);
+        if (!match) return this.json({ errors: ["invalid code"] }, 400);
+
+        user.authGuid = user.authGuid || v4();
+        await this.repos.user.save(user);
+        await this.repos.user.clearVerification(user.id);
+        AuditLogHelper.log(this.repos, "", user.id, "security", "code_verified", "user", user.id, { email: user.email }, ip);
+        return this.json({ authGuid: user.authGuid }, 200);
+      } catch (e) {
+        if (Environment.currentEnvironment === "dev") {
+          throw e;
+        }
+        this.logger.error(e);
+        return this.error([e.toString()]);
+      }
+    });
+  }
+
+  @httpPost("/checkEmail", body("email").isEmail().trim().normalizeEmail({ gmail_remove_dots: false }))
+  public async checkEmail(req: express.Request<{}, {}, { email: string }>, res: express.Response): Promise<any> {
+    return this.actionWrapperAnon(req, res, async () => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+      const email = req.body.email;
+      const user = await this.repos.user.loadByEmail(email);
+
+      if (user) {
+        return this.json({ exists: true, peopleMatches: [] }, 200);
+      }
+
+      const churches = await this.repos.church.loadAll();
+      const matches: Array<{ firstName: string; lastName: string; churchId: string; churchName: string }> = [];
+
+      for (const church of churches) {
+        const matchingPeople = await this.repos.person.searchEmail(church.id, email);
+        const exactMatches = matchingPeople.filter((p: Person) => p.contactInfo?.email?.toLowerCase() === email.toLowerCase());
+        for (const person of exactMatches) {
+          matches.push({
+            firstName: person.name?.first || "",
+            lastName: person.name?.last || "",
+            churchId: church.id,
+            churchName: church.name
+          });
+        }
+      }
+
+      return this.json({ exists: false, peopleMatches: matches }, 200);
     });
   }
 
@@ -363,10 +484,13 @@ export class UserController extends MembershipBaseController {
 
       let user = await this.repos.user.load(workingUserId);
       if (user !== null) {
+        const oldEmail = user.email;
         const existingUser = await this.repos.user.loadByEmail(req.body.email);
         if (existingUser === null || existingUser.id === workingUserId) {
           user.email = req.body.email;
           user = await this.repos.user.save(user);
+          const ip = AuditLogHelper.getClientIp(req);
+          AuditLogHelper.log(this.repos, au.churchId, au.id, "security", "email_changed", "user", workingUserId, { oldEmail, newEmail: req.body.email }, ip);
         } else return this.denyAccess(["Access denied"]);
       }
 
@@ -396,6 +520,8 @@ export class UserController extends MembershipBaseController {
         const hashedPass = bcrypt.hashSync(req.body.newPassword, 10);
         user.password = hashedPass;
         user = await this.repos.user.save(user);
+        const ip = AuditLogHelper.getClientIp(req);
+        AuditLogHelper.log(this.repos, au.churchId, au.id, "security", "password_changed", "user", au.id, { email: user.email, method: "updatePassword" }, ip);
       }
       user.password = null;
       return this.json(user, 200);
@@ -419,6 +545,31 @@ export class UserController extends MembershipBaseController {
       });
 
       return this.json(users, 200);
+    });
+  }
+
+  @httpPost("/sendInviteEmail")
+  public async sendInviteEmail(req: express.Request<{}, {}, { email: string; personName: string; contextName: string; churchName: string }>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (_au) => {
+      const { email, personName, contextName, churchName } = req.body;
+      if (!email || !contextName) return res.status(400).json({ errors: ["email and contextName are required"] });
+
+      let loginLink = "/";
+      let isExistingUser = false;
+      const user = await this.repos.user.loadByEmail(email);
+      if (user) {
+        isExistingUser = true;
+        user.authGuid = v4();
+        loginLink = `/login?auth=${user.authGuid}`;
+        await Promise.all([
+          this.repos.user.save(user),
+          UserHelper.sendInviteEmail(email, personName || "", contextName, churchName || "", loginLink, isExistingUser)
+        ]);
+      } else {
+        await UserHelper.sendInviteEmail(email, personName || "", contextName, churchName || "", loginLink, isExistingUser);
+      }
+
+      return this.json({ success: true }, 200);
     });
   }
 
