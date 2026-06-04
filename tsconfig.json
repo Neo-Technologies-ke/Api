@@ -41,6 +41,7 @@
     "tools/**/*.spec.ts",
     "src/**/*.spec.ts",
     "src/**/*.test.ts",
-    "src/playground/playground.ts"
+    "src/playground/playground.ts",
+    "src/vps-websocket-server.ts"
   ]
 }
