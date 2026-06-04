@@ -3,6 +3,7 @@ import express from "express";
 import { Container } from "inversify";
 import { InversifyExpressServer } from "inversify-express-utils";
 import { Environment } from "./shared/helpers/Environment.js";
+import { EmailHelper } from "./shared/helpers/EmailHelper.js";
 import { CustomAuthProvider } from "./shared/infrastructure/CustomAuthProvider.js";
 import { RepoManager } from "./shared/infrastructure/RepoManager.js";
 import cors from "cors";
@@ -17,6 +18,8 @@ export const createApp = async () => {
   if (!Environment.currentEnvironment) {
     await Environment.init(environment);
   }
+
+  EmailHelper.patchUpstream();
 
   // Pools now auto-initialize on first use
 
