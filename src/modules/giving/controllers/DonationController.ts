@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 import { GivingBaseController } from "./GivingBaseController.js";
 import { Donation } from "../models/index.js";
 import { Permissions } from "../../../shared/helpers/Permissions.js";
-import { EmailHelper } from "@churchapps/apihelper";
+import { EmailHelper } from "../../../shared/helpers/CustomEmailHelper.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

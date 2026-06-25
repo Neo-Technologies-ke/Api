@@ -8,7 +8,8 @@ import { BulkPersonDeleteRequest, BulkPersonUpdateRequest } from "../models/requ
 import { ArrayHelper, FileStorageHelper } from "@churchapps/apihelper";
 import { Environment, Permissions, PersonConditionHelper, PersonHelper, UserChurchHelper } from "../helpers/index.js";
 import { WebhookDispatcher } from "../../../shared/webhooks/index.js";
-import { AuthenticatedUser, EmailHelper } from "@churchapps/apihelper";
+import { AuthenticatedUser } from "@churchapps/apihelper";
+import { EmailHelper } from "../../../shared/helpers/CustomEmailHelper.js";
 
 @controller("/membership/people")
 export class PersonController extends MembershipBaseController {

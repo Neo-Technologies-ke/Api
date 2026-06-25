@@ -1,5 +1,6 @@
 import { EnvironmentBase } from "@churchapps/apihelper";
 import { DatabaseUrlParser } from "./DatabaseUrlParser.js";
+import { CustomEnvironment } from "./CustomEmailHelper.js";
 
 export class Environment extends EnvironmentBase {
   // Current environment and server configuration
@@ -108,6 +109,7 @@ export class Environment extends EnvironmentBase {
 
     // Initialize app configurations
     await this.initializeAppConfigs(data);
+    CustomEnvironment.populateOAuth();
   }
 
   private static initializeModuleConfigs(config: any) {

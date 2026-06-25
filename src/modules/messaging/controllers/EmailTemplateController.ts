@@ -4,7 +4,7 @@ import axios from "axios";
 import { MessagingBaseController } from "./MessagingBaseController.js";
 import { EmailTemplate, DeliveryLog } from "../models/index.js";
 import { MergeFieldHelper } from "../helpers/MergeFieldHelper.js";
-import { EmailHelper } from "@churchapps/apihelper";
+import { EmailHelper } from "../../../shared/helpers/CustomEmailHelper.js";
 import { Environment } from "../../../shared/helpers/Environment.js";
 
 interface GroupMemberEmailDetail {
