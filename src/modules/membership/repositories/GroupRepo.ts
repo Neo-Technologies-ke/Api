@@ -1,6 +1,6 @@
 import { injectable } from "inversify";
 import { getDb } from "../db/index.js";
-import { UniqueIdHelper } from "@churchapps/apihelper";
+import { SlugHelper, UniqueIdHelper } from "@churchapps/apihelper";
 import { Group } from "../models/index.js";
 
 @injectable()
@@ -189,7 +189,7 @@ export class GroupRepo {
       meetingTime: row.meetingTime,
       meetingLocation: row.meetingLocation,
       labelArray: [],
-      slug: row.slug,
+      slug: row.slug || SlugHelper.slugifyString(row.name),
       campusId: row.campusId,
       joinPolicy: (row.joinPolicy as Group["joinPolicy"]) ?? "open"
     };

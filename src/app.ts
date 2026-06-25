@@ -131,6 +131,13 @@ export const createApp = async () => {
       })
     );
 
+    // Serve static content files (for local file storage)
+    if (Environment.fileStore === "local") {
+      const contentPath = process.env.CONTENT_PATH || "./content";
+      app.use("/content", express.static(contentPath));
+      console.log(`📁 Serving static content from: ${contentPath}`);
+    }
+
     // Module routing logger (for debugging)
     app.use(moduleRoutingLogger);
 

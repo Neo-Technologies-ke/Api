@@ -778,7 +778,7 @@ export class DonateController extends GivingBaseController {
     const formattedFee = CurrencyHelper.formatCurrencyWithLocale(transactionFee, currencyCode);
     const formattedTotal = CurrencyHelper.formatCurrencyWithLocale(amount || 0, currencyCode);
 
-    const domain = Environment.appEnv === "staging" ? `${church.subDomain}.staging.b1.church` : `${church.subDomain}.b1.church`;
+    const domain = `${church.subDomain}.lifereformationcentre.org`;
 
     const title = `${church?.logo ? `<img src="${church.logo}" alt="Logo: " style="width: 100%" /> ` : ""}${church.name}`;
 
@@ -927,8 +927,8 @@ export class DonateController extends GivingBaseController {
           return { response: "robot" };
         }
 
-        // if google's response already includes b1.church in hostname property, no need to check in the DB then
-        if (data.hostname.includes("b1.church")) {
+        // if google's response already includes lifereformationcentre.org in hostname property, no need to check in the DB then
+        if (data.hostname.includes("lifereformationcentre.org")) {
           return { response: "human" };
         }
 

@@ -1,4 +1,4 @@
-import { controller, httpGet, httpPost, httpDelete, requestParam } from "inversify-express-utils";
+import { controller, httpGet, httpPost, httpDelete, requestParam, httpPut, requestBody } from "inversify-express-utils";
 import express from "express";
 import { MessagingBaseController } from "./MessagingBaseController.js";
 import { Message } from "../models/index.js";
@@ -190,6 +190,25 @@ export class MessageController extends MessagingBaseController {
       })) as any;
 
       return this.json({ message: "Message deleted successfully" }, 200);
+    }) as any;
+  }
+
+  @httpPut("/:churchId/:id")
+  public async update(
+    @requestParam("churchId") churchId: string,
+    @requestParam("id") id: string,
+    @requestBody() body: Partial<Message>,
+    req: express.Request,
+    res: express.Response
+  ): Promise<Message> {
+    return this.actionWrapper(req, res, async (au) => {
+      const message = await this.repos.message.loadById(churchId, id);
+      if (!message) {
+        throw new Error("Message not found");
+      }
+      const updatedMessage = { ...message, ...body };
+      const savedMessage = await this.repos.message.save(updatedMessage);
+      return this.repos.message.convertToModel(savedMessage);
     }) as any;
   }
 }
