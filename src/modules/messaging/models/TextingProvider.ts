@@ -4,6 +4,7 @@ export class TextingProvider {
   public provider?: string;
   public apiKey?: string;
   public apiSecret?: string;
+  public username?: string;
   public fromNumber?: string;
   public enabled?: boolean;
 }
