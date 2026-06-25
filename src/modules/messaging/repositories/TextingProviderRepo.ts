@@ -56,6 +56,7 @@ export class TextingProviderRepo {
       provider: data.provider,
       apiKey: data.apiKey,
       apiSecret: data.apiSecret,
+      username: data.username,
       fromNumber: data.fromNumber,
       enabled: data.enabled
     };
