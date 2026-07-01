@@ -56,6 +56,7 @@ RUN apk add --no-cache mysql-client dcron
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/config ./config
+COPY --from=builder /app/src/shared/templates ./src/shared/templates
 
 # Install only production dependencies
 RUN npm install --only=production --legacy-peer-deps --no-audit --no-fund || \
