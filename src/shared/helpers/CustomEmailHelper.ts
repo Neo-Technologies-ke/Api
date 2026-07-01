@@ -58,16 +58,32 @@ export class EmailHelper extends OldEmailHelper {
         .replace("{contents}", contents);
       await EmailHelper.sendEmail({ from, to, subject, body, replyTo });
     } else {
-      await OldEmailHelper.sendTemplatedEmail(
-        from,
-        to,
-        appName,
-        appUrl,
-        subject,
-        contents,
-        emailTemplate,
-        replyTo
-      );
+      // For custom templates, we need to handle them differently
+      if (emailTemplate === "LifeReformationEmailTemplate.html") {
+        const template = EmailHelper.readTemplate(emailTemplate);
+        const body = template
+          .replace(
+            "{appLink}",
+            "<a target='_blank' rel='noreferrer noopener' href=\"" +
+              appUrl +
+              '/">' +
+              appName +
+              "</a>"
+          )
+          .replace("{contents}", contents);
+        await OldEmailHelper.sendEmail({ from, to, subject, body, replyTo });
+      } else {
+        await OldEmailHelper.sendTemplatedEmail(
+          from,
+          to,
+          appName,
+          appUrl,
+          subject,
+          contents,
+          emailTemplate,
+          replyTo
+        );
+      }
     }
   }
 
