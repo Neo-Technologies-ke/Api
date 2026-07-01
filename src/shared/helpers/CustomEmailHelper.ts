@@ -47,14 +47,8 @@ export class EmailHelper extends OldEmailHelper {
       if (!appUrl) appUrl = "https://lifereformationcentre.org";
       const template = EmailHelper.readTemplate(emailTemplate);
       const body = template
-        .replace(
-          "{appLink}",
-          "<a target='_blank' rel='noreferrer noopener' href=\"" +
-            appUrl +
-            '/">' +
-            appName +
-            "</a>"
-        )
+        .replace("{appLink}", appUrl)
+        .replace("{appName}", appName)
         .replace("{contents}", contents);
       await EmailHelper.sendEmail({ from, to, subject, body, replyTo });
     } else {
@@ -62,14 +56,8 @@ export class EmailHelper extends OldEmailHelper {
       if (emailTemplate === "LifeReformationEmailTemplate.html") {
         const template = EmailHelper.readTemplate(emailTemplate);
         const body = template
-          .replace(
-            "{appLink}",
-            "<a target='_blank' rel='noreferrer noopener' href=\"" +
-              appUrl +
-              '/">' +
-              appName +
-              "</a>"
-          )
+          .replace("{appLink}", appUrl)
+          .replace("{appName}", appName)
           .replace("{contents}", contents);
         await OldEmailHelper.sendEmail({ from, to, subject, body, replyTo });
       } else {
