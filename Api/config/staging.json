@@ -1,0 +1,16 @@
+{
+  "environment": "staging",
+  "apiUrl": "https://api.staging.churchapps.org",
+  "deliveryProvider": "aws",
+  "appName": "API",
+  "contentRoot": "https://content.staging.churchapps.org",
+  "emailOnRegistration": false,
+  "fileStore": "S3",
+  "mailSystem": "SES",
+  "s3Bucket": "staging-churchapps-content",
+  "supportEmail": "support@churchapps.org",
+  "b1AdminRoot": "https://admin.b1.church",
+  "messagingApi": "https://api.staging.churchapps.org/messaging",
+  "aiProvider": "openrouter",
+  "storeApi": "https://api.staging.mutualministry.com"
+}

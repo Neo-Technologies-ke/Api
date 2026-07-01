@@ -1,0 +1,232 @@
+service: api
+
+frameworkVersion: "3"
+
+disableSchemaValidation: true
+
+custom:
+  env: ${opt:stage, 'dev'}
+  # Simple mapping to ensure lowercase - add more as needed
+  stageToLower:
+    dev: dev
+    demo: demo  
+    staging: staging
+    Staging: staging
+    prod: prod
+    Prod: prod
+  envLower: ${self:custom.stageToLower.${self:custom.env}, self:custom.env}
+  serverless-offline:
+    httpPort: 8084
+    websocketPort: 8087
+    lambdaPort: 8085
+  vpcSettings:
+    prod:
+      securityGroupIds:
+        - sg-052314a1eec2f2567
+      subnetIds:
+        - subnet-01a6b61d749d10c46
+    current: ${self:custom.vpcSettings.${self:custom.envLower}, ''}
+  # Critical database connections loaded from Parameter Store at deploy time
+  # These provide faster cold starts by avoiding runtime Parameter Store calls
+
+provider:
+  name: aws
+  runtime: nodejs22.x
+  stage: ${opt:stage, 'dev'}
+  region: us-east-2
+  memorySize: 1024
+  timeout: 30
+  environment:
+    STAGE: ${self:custom.env}
+    ENVIRONMENT: ${self:custom.env}
+    # App secrets and config loaded from SSM at deploy-time
+    JWT_SECRET: ${ssm:/${self:custom.envLower}/jwtSecret, ''}
+    ENCRYPTION_KEY: ${ssm:/${self:custom.envLower}/encryptionKey, ''}
+    
+    # Database connections for all modules
+    MEMBERSHIP_CONNECTION_STRING: ${ssm:/${self:custom.envLower}/membershipApi/connectionString, ''}
+    ATTENDANCE_CONNECTION_STRING: ${ssm:/${self:custom.envLower}/attendanceApi/connectionString, ''}
+    CONTENT_CONNECTION_STRING: ${ssm:/${self:custom.envLower}/contentApi/connectionString, ''}
+    GIVING_CONNECTION_STRING: ${ssm:/${self:custom.envLower}/givingApi/connectionString, ''}
+    MESSAGING_CONNECTION_STRING: ${ssm:/${self:custom.envLower}/messagingApi/connectionString, ''}
+    DOING_CONNECTION_STRING: ${ssm:/${self:custom.envLower}/doingApi/connectionString, ''}
+    REPORTING_CONNECTION_STRING: ${ssm:/${self:custom.envLower}/reportingApi/connectionString, ''}
+
+    # Third-party API keys (non-DB secrets)
+    HUBSPOT_KEY: ${ssm:/${self:custom.envLower}/hubspotKey, ''}
+    CADDY_HOST: ${ssm:/${self:custom.envLower}/caddyHost, ''}
+    CADDY_PORT: ${ssm:/${self:custom.envLower}/caddyPort, ''}
+    YOUTUBE_API_KEY: ${ssm:/${self:custom.envLower}/youTubeApiKey, ''}
+    PEXELS_KEY: ${ssm:/${self:custom.envLower}/pexelsKey, ''}
+    VIMEO_TOKEN: ${ssm:/${self:custom.envLower}/vimeoToken, ''}
+    API_BIBLE_KEY: ${ssm:/${self:custom.envLower}/apiBibleKey, ''}
+    YOUVERSION_API_KEY: ${ssm:/${self:custom.envLower}/youVersionApiKey, ''}
+    PRAISECHARTS_CONSUMER_KEY: ${ssm:/${self:custom.envLower}/praiseChartsConsumerKey, ''}
+    PRAISECHARTS_CONSUMER_SECRET: ${ssm:/${self:custom.envLower}/praiseChartsConsumerSecret, ''}
+    GOOGLE_RECAPTCHA_SECRET_KEY: ${ssm:/${self:custom.envLower}/recaptcha-secret-key, ''}
+    OPENROUTER_API_KEY: ${ssm:/${self:custom.envLower}/openRouterApiKey, ''}
+    OPENAI_API_KEY: ${ssm:/${self:custom.envLower}/openAiApiKey, ''}
+
+    # Web Push (VAPID)
+    WEB_PUSH_PUBLIC_KEY: ${ssm:/${self:custom.envLower}/webPushPublicKey, ''}
+    WEB_PUSH_PRIVATE_KEY: ${ssm:/${self:custom.envLower}/webPushPrivateKey, ''}
+    WEB_PUSH_SUBJECT: ${ssm:/${self:custom.envLower}/webPushSubject, 'mailto:support@churchapps.org'}
+
+    # Sentry error tracking
+    NODE_OPTIONS: "--import @sentry/aws-serverless/awslambda-auto"
+    SENTRY_DSN: "https://15d37b1878f2bb1f6a94e8e47495625f@o4510432524107776.ingest.us.sentry.io/4510433937915904"
+
+    WEBSOCKET_API_ID:
+      Ref: WebsocketsApi
+  iam:
+    role: arn:aws:iam::428019619026:role/ChurchAppsRole
+
+package:
+  individually: false
+  patterns:
+    - "config/**"
+    - "dist/**"
+    - "lambda.js"
+    - "package.json"
+    - "!node_modules/**"
+    - "!src/**"
+    - "!tools/**"
+    - "!package-lock.json"
+    - "!tsconfig.json"
+    - "!.env"
+    - "!.git/**"
+    - "!.gitignore"
+    - "!README.md"
+    - "!serverless.yml"
+    - "!layer/**"
+
+layers:
+  dependencies:
+    path: layer
+    name: ${self:service}-dependencies-${self:custom.env}
+    description: Dependencies layer for ${self:service}
+    compatibleRuntimes:
+      - nodejs22.x
+    retain: false
+
+functions:
+  web:
+    handler: lambda.web
+    layers:
+      - { Ref: DependenciesLambdaLayer }
+      - arn:aws:lambda:us-east-2:943013980633:layer:SentryNodeServerlessSDKv10:19
+    memorySize: 1024
+    timeout: 30
+    vpc: ${self:custom.vpcSettings.current, ''}
+    environment:
+      # Function-specific overrides (if any) can be set here
+    events:
+      - http:
+          path: /
+          method: ANY
+          cors: true
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+      - http:
+          path: /api/{proxy+}
+          method: ANY
+          cors: true
+
+  socket:
+    handler: lambda.socket
+    layers:
+      - { Ref: DependenciesLambdaLayer }
+      - arn:aws:lambda:us-east-2:943013980633:layer:SentryNodeServerlessSDKv10:19
+    memorySize: 1024
+    timeout: 30
+    vpc: ${self:custom.vpcSettings.current, ''}
+    environment:
+      # Database connections for WebSocket functionality
+      MEMBERSHIP_CONNECTION_STRING: ${ssm:/${self:custom.envLower}/membershipApi/connectionString, ''}
+      MESSAGING_CONNECTION_STRING: ${ssm:/${self:custom.envLower}/messagingApi/connectionString, ''}
+    events:
+      - websocket:
+          route: $connect
+      - websocket:
+          route: $disconnect
+      - websocket:
+          route: $default
+
+  timer15Min:
+    handler: lambda.timer15Min
+    layers:
+      - { Ref: DependenciesLambdaLayer }
+      - arn:aws:lambda:us-east-2:943013980633:layer:SentryNodeServerlessSDKv10:19
+    memorySize: 256
+    timeout: 300
+    vpc: ${self:custom.vpcSettings.current, ''}
+    environment:
+      # Database connections for messaging notifications
+      MEMBERSHIP_CONNECTION_STRING: ${ssm:/${self:custom.envLower}/membershipApi/connectionString, ''}
+      MESSAGING_CONNECTION_STRING: ${ssm:/${self:custom.envLower}/messagingApi/connectionString, ''}
+    events:
+      - schedule:
+          rate: rate(30 minutes)
+          enabled: true
+
+  timerMidnight:
+    handler: lambda.timerMidnight
+    layers:
+      - { Ref: DependenciesLambdaLayer }
+      - arn:aws:lambda:us-east-2:943013980633:layer:SentryNodeServerlessSDKv10:19
+    memorySize: 256
+    timeout: 300
+    vpc: ${self:custom.vpcSettings.current, ''}
+    environment:
+      # Database connections for daily digest notifications
+      MEMBERSHIP_CONNECTION_STRING: ${ssm:/${self:custom.envLower}/membershipApi/connectionString, ''}
+      MESSAGING_CONNECTION_STRING: ${ssm:/${self:custom.envLower}/messagingApi/connectionString, ''}
+    events:
+      - schedule:
+          rate: cron(0 5 * * ? *)
+          enabled: true
+
+  timerScheduledTasks:
+    handler: lambda.timerScheduledTasks
+    layers:
+      - { Ref: DependenciesLambdaLayer }
+      - arn:aws:lambda:us-east-2:943013980633:layer:SentryNodeServerlessSDKv10:19
+    memorySize: 256
+    timeout: 300
+    vpc: ${self:custom.vpcSettings.current, ''}
+    environment:
+      # Database connections for scheduled tasks
+      MEMBERSHIP_CONNECTION_STRING: ${ssm:/${self:custom.envLower}/membershipApi/connectionString, ''}
+      MESSAGING_CONNECTION_STRING: ${ssm:/${self:custom.envLower}/messagingApi/connectionString, ''}
+      DOING_CONNECTION_STRING: ${ssm:/${self:custom.envLower}/doingApi/connectionString, ''}
+    events:
+      - schedule:
+          rate: cron(0 5 * * ? *)
+          enabled: true
+
+plugins:
+  - serverless-offline
+
+resources:
+  Resources:
+    GatewayResponseDefault4XX:
+      Type: "AWS::ApiGateway::GatewayResponse"
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: "ApiGatewayRestApi"
+
+    GatewayResponseDefault5XX:
+      Type: "AWS::ApiGateway::GatewayResponse"
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_5XX
+        RestApiId:
+          Ref: "ApiGatewayRestApi"

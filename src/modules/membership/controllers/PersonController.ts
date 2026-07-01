@@ -54,7 +54,7 @@ export class PersonController extends MembershipBaseController {
       const person: Person = await this.repos.person.load(churchId, personId);
       if (!person?.email) return this.denyAccess(["No email address"]);
 
-      await EmailHelper.sendTemplatedEmail(Environment.supportEmail, person.email, appName, null, subject, body);
+      await EmailHelper.sendTemplatedEmail(Environment.supportEmail, person.email, appName, null, subject, body, "ChurchEmailTemplate.html");
       return { success: true };
     });
   }

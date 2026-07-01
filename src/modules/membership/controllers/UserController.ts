@@ -263,7 +263,7 @@ export class UserController extends MembershipBaseController {
           if (Environment.emailOnRegistration) {
             try {
               const emailBody = "Name: " + register.firstName + " " + register.lastName + "<br/>Email: " + register.email + "<br/>App: " + register.appName;
-              emailPromises.push(EmailHelper.sendTemplatedEmail(Environment.supportEmail, Environment.supportEmail, register.appName, register.appUrl, "New User Registration", emailBody));
+              emailPromises.push(EmailHelper.sendTemplatedEmail(Environment.supportEmail, Environment.supportEmail, register.appName, register.appUrl, "New User Registration", emailBody, "ChurchEmailTemplate.html"));
               await Promise.all(emailPromises);
               console.log("Register: emails", Date.now() - emailStart, "ms");
             } catch (err) {

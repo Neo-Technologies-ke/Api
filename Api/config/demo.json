@@ -1,0 +1,16 @@
+{
+  "environment": "demo",
+  "apiUrl": "https://api.demo.churchapps.org",
+  "deliveryProvider": "aws",
+  "appName": "API",
+  "contentRoot": "https://democontent.churchapps.org",
+  "emailOnRegistration": false,
+  "fileStore": "S3",
+  "mailSystem": "SES",
+  "s3Bucket": "demo-churchapps-content",
+  "supportEmail": "support@churchapps.org",
+  "b1AdminRoot": "https://demo.b1.church",
+  "messagingApi": "https://api.demo.churchapps.org/messaging",
+  "aiProvider": "openrouter",
+  "storeApi": "https://api.staging.mutualministry.com"
+}

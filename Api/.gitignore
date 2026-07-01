@@ -1,0 +1,116 @@
+.serena
+.claude
+Notes.md
+
+# Dependencies
+node_modules/
+layer/
+
+# Build outputs
+dist/
+!eslint.config.js
+*.js.map
+*.d.ts
+*.d.ts.map
+.tsbuildinfo
+
+# Environment files
+.env
+.env.*
+!.env.sample
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS files
+Thumbs.db
+
+# Serverless
+.serverless/
+.webpack/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# AWS credentials and config
+.aws/
+aws-credentials.json
+
+# Local development
+*.local
+
+# Build artifacts
+build/
+out/
+
+# Jest
+jest_html_reporters.html
+test-results/
+
+# Lambda layers
+layer/
+layers/
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Certificates
+*.pem
+*.key
+*.crt
+
+# VPS Deployment - Sensitive Files (DO NOT COMMIT)
+.passwords.txt
+*.passwords.txt
+*_DEPLOYMENT*.md
+DEPLOYMENT_*.md
+VPS_*.md
+QUICK_START.md
+README_DEPLOYMENT.md
+docker-compose.*.yml
+deploy.sh
+init-databases.sh
+backup-databases.sh
+restore-databases.sh
+monitor.sh
+quick-deploy.sh
+update-env-passwords.sh
+fix-docker-compose.sh
+init-all-databases.sql
+nginx-custom.conf
+deployment-package/
+
+# Data and script files (DO NOT COMMIT)
+*.mjs
+*.csv
+*.xlsx
+*.xls
+*.Identifier
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backup files (DO NOT COMMIT)
+*.backup-*
