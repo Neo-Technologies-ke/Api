@@ -2,7 +2,7 @@
   "environment": "prod",
   "apiUrl": "https://api.lifereformationcentre.org",
   "deliveryProvider": "local",
-  "appName": "API",
+  "appName": "Life Reformation Centre",
   "contentRoot": "https://api.lifereformationcentre.org/content",
   "emailOnRegistration": true,
   "fileStore": "local",
