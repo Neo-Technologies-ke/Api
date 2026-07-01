@@ -1,5 +1,7 @@
 import { EnvironmentBase, IEmailPayload, EmailHelper as OldEmailHelper } from "@churchapps/apihelper";
 import axios from "axios";
+import * as fs from "fs";
+import * as path from "path";
 
 export class CustomEnvironment extends EnvironmentBase {
   static smtpClientId: string;
@@ -18,6 +20,15 @@ export class CustomEnvironment extends EnvironmentBase {
 }
 
 export class EmailHelper extends OldEmailHelper {
+  public static readTemplate(templateName: string): string {
+    // First try to read from custom templates directory
+    const customPath = path.join(process.cwd(), "src", "shared", "templates", templateName);
+    if (fs.existsSync(customPath)) {
+      return fs.readFileSync(customPath, "utf8");
+    }
+    // Fall back to apihelper templates
+    return OldEmailHelper.readTemplate(templateName);
+  }
   public static async sendTemplatedEmail(
     from: string,
     to: string,
@@ -27,13 +38,14 @@ export class EmailHelper extends OldEmailHelper {
     contents: string,
     emailTemplate:
       | "EmailTemplate.html"
-      | "ChurchEmailTemplate.html" = "EmailTemplate.html",
+      | "ChurchEmailTemplate.html"
+      | "LifeReformationEmailTemplate.html" = "EmailTemplate.html",
     replyTo?: string
   ): Promise<void> {
     if (EnvironmentBase.mailSystem === "LRC_OAUTH") {
       if (!appName) appName = "LRC B1";
       if (!appUrl) appUrl = "https://lifereformationcentre.org";
-      const template = OldEmailHelper.readTemplate(emailTemplate);
+      const template = EmailHelper.readTemplate(emailTemplate);
       const body = template
         .replace(
           "{appLink}",
