@@ -1,4 +1,6 @@
 import {
+  CampusRepo,
+  ListRepo,
   GroupMemberRepo,
   GroupRepo,
   GroupReportRepo,
@@ -22,6 +24,8 @@ import {
 import { UserRepo, ChurchRepo, RoleRepo, RoleMemberRepo, RolePermissionRepo, UserChurchRepo, AccessLogRepo, AuditLogRepo } from "./index.js";
 
 export class Repos {
+  public campus: CampusRepo;
+  public list: ListRepo;
   public groupMember: GroupMemberRepo;
   public group: GroupRepo;
   public groupReport: GroupReportRepo;
@@ -56,6 +60,8 @@ export class Repos {
   public static getCurrent = () => new Repos();
 
   constructor() {
+    this.campus = new CampusRepo();
+    this.list = new ListRepo();
     this.groupMember = new GroupMemberRepo();
     this.group = new GroupRepo();
     this.groupReport = new GroupReportRepo();

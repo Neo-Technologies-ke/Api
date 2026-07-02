@@ -1,6 +1,6 @@
 import type {
   AccessLog, Answer, AuditLog, Campus, Church, ClientError, Domain, Form,
-  FormSubmission, Group, GroupMember, Household, MemberPermission,
+  FormSubmission, Group, GroupMember, Household, List, MemberPermission,
   OAuthClient, OAuthCode, OAuthDeviceCode, OAuthRelaySession, OAuthToken,
   Question, Role, RoleMember, RolePermission, Setting, User, UserChurch,
   VisibilityPreference
@@ -46,11 +46,17 @@ export interface PeopleTable {
   removed?: boolean;
 }
 
+export interface ListTable extends Omit<List, 'createdByPersonName' | 'conditions' | 'rules'> {
+  conditions?: string;
+  rules?: string;
+}
+
 export interface MembershipDatabase {
   accessLogs: AccessLog;
   answers: Answer;
   auditLogs: AuditLog;
   campuses: Campus;
+  lists: ListTable;
   churches: Omit<Church, "settings">;
   clientErrors: ClientError;
   domains: Domain;
