@@ -5,7 +5,7 @@ import { Campus } from "../models/index.js";
 import { Permissions } from "../helpers/index.js";
 
 @controller("/membership/campuses")
-export class CampusController extends MembershipBaseController {
+export class MembershipCampusController extends MembershipBaseController {
   @httpGet("/:id")
   public async get(@requestParam("id") id: string, req: express.Request, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
