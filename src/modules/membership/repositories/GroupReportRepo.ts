@@ -43,28 +43,28 @@ export class GroupReportRepo {
   }
 
   public async loadAll(churchId: string): Promise<any[]> {
-    return getDb().selectFrom("groupReports as gr" as any)
-      .selectAll("gr")
-      .orderBy("gr.reportDate", "desc")
-      .where("gr.churchId", "=", churchId)
+    return getDb().selectFrom("groupReports" as any)
+      .selectAll()
+      .where("churchId" as any, "=", churchId)
+      .orderBy("reportDate" as any, "desc")
       .execute();
   }
 
   public async loadForGroup(churchId: string, groupId: string): Promise<any[]> {
-    return getDb().selectFrom("groupReports as gr" as any)
-      .selectAll("gr")
-      .where("gr.churchId", "=", churchId)
-      .where("gr.groupId", "=", groupId)
-      .orderBy("gr.reportDate", "desc")
+    return getDb().selectFrom("groupReports" as any)
+      .selectAll()
+      .where("churchId" as any, "=", churchId)
+      .where("groupId" as any, "=", groupId)
+      .orderBy("reportDate" as any, "desc")
       .execute();
   }
 
   public async loadForPerson(churchId: string, personId: string): Promise<any[]> {
-    return getDb().selectFrom("groupReports as gr" as any)
-      .selectAll("gr")
-      .where("gr.churchId", "=", churchId)
-      .where("gr.personId", "=", personId)
-      .orderBy("gr.reportDate", "desc")
+    return getDb().selectFrom("groupReports" as any)
+      .selectAll()
+      .where("churchId" as any, "=", churchId)
+      .where("personId" as any, "=", personId)
+      .orderBy("reportDate" as any, "desc")
       .execute();
   }
 
