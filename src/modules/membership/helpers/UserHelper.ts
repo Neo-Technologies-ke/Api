@@ -58,15 +58,15 @@ export class UserHelper {
   }
 
   static sendWelcomeEmail(email: string, code: string, appName: string, appUrl: string): Promise<any> {
-    if (!appName) appName = "ChurchApps";
+    if (!appName) appName = "Life Reformation Centre";
     if (!appUrl) appUrl = Environment.b1AdminRoot;
 
     const contents =
-      "<h2>Welcome to " + appName + "</h2>" +
+      "<h2>Welcome To " + appName + "</h2>" +
       "<p>Enter this verification code in the app to finish creating your account:</p>" +
       `<p style="font-size: 28px; font-weight: bold; letter-spacing: 6px; text-align: center; font-family: monospace; padding: 16px; background: #f3f4f6; border-radius: 6px;">${code}</p>` +
       "<p style=\"color: #6b7280; font-size: 14px;\">This code expires in 15 minutes. If you did not request an account, you can safely ignore this email.</p>";
-    return EmailHelper.sendTemplatedEmail(Environment.supportEmail, email, appName, appUrl, "Welcome to " + appName + ".", contents, "LifeReformationEmailTemplate.html");
+    return EmailHelper.sendTemplatedEmail(Environment.supportEmail, email, appName, appUrl, "Welcome To " + appName + ".", contents, "LifeReformationEmailTemplate.html");
   }
 
   static sendInviteEmail(email: string, personName: string, contextName: string, churchName: string, loginLink: string, isExistingUser: boolean): Promise<any> {
@@ -83,8 +83,8 @@ export class UserHelper {
   }
 
   static sendForgotEmail(email: string, code: string, appName: string, appUrl: string): Promise<any> {
-    if (!appName) appName = "ChurchApps";
-    if (!appUrl) appUrl = Environment.b1AdminRoot;
+    if (!appName) appName = "Life Reformation Centre";
+    if (!appUrl) appUrl = "https://portal.lifereformationcentre.org";
 
     const contents =
       "<h2>Reset Password</h2>" +
