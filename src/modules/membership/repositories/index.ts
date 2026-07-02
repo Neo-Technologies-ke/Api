@@ -1,5 +1,6 @@
 export { GroupMemberRepo } from "./GroupMemberRepo.js";
 export { GroupRepo } from "./GroupRepo.js";
+export { GroupReportRepo } from "./GroupReportRepo.js";
 export { HouseholdRepo } from "./HouseholdRepo.js";
 export { PersonRepo } from "./PersonRepo.js";
 export { AnswerRepo } from "./AnswerRepo.js";

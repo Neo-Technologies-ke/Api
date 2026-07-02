@@ -10,6 +10,8 @@ export class Permissions extends BasePermissions {
 
   static groupMembers = { view: { contentType: "Group Members", action: "View" }, edit: { contentType: "Group Members", action: "Edit" } };
 
+  static groupReports = { view: { contentType: "Group Reports", action: "View" }, edit: { contentType: "Group Reports", action: "Edit" } };
+
   static people = { view: { contentType: "People", action: "View" }, viewMembers: { contentType: "People", action: "View Members" }, edit: { contentType: "People", action: "Edit" }, editSelf: { contentType: "People", action: "Edit Self" } };
 
   static forms = { admin: { contentType: "Forms", action: "Admin" }, edit: { contentType: "Forms", action: "Edit" } };
