@@ -1,6 +1,6 @@
 import type {
   AccessLog, Answer, AuditLog, Campus, Church, ClientError, Domain, Form,
-  FormSubmission, Group, GroupMember, Household, List, MemberPermission,
+  FormSubmission, Group, GroupJoinRequest, GroupMember, Household, List, MemberPermission,
   OAuthClient, OAuthCode, OAuthDeviceCode, OAuthRelaySession, OAuthToken,
   Question, Role, RoleMember, RolePermission, Setting, User, UserChurch,
   VisibilityPreference
@@ -63,6 +63,7 @@ export interface MembershipDatabase {
   forms: Omit<Form, "action" | "questions"> & { removed?: boolean; archived?: boolean };
   formSubmissions: Omit<FormSubmission, "form" | "questions" | "answers">;
   groups: Omit<Group, "labelArray" | "memberCount" | "importKey"> & { removed?: boolean };
+  groupJoinRequests: Omit<GroupJoinRequest, "person" | "group">;
   groupMembers: Omit<GroupMember, "person" | "group">;
   households: Household;
   memberPermissions: Omit<MemberPermission, "personName" | "formName">;

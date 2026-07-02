@@ -1,4 +1,5 @@
 export { Group } from "./Group.js";
+export { GroupJoinRequest } from "./GroupJoinRequest.js";
 export { GroupMember } from "./GroupMember.js";
 export { GroupReport } from "./GroupReport.js";
 export { Household } from "./Household.js";

@@ -2,6 +2,7 @@ export { CustomBaseController, ErrorController } from "@churchapps/apihelper";
 export { MembershipCampusController } from "./CampusController.js";
 export { ListController } from "./ListController.js";
 export { GroupController } from "./GroupController.js";
+export { GroupJoinRequestController } from "./GroupJoinRequestController.js";
 export { GroupMemberController } from "./GroupMemberController.js";
 export { GroupReportController } from "./GroupReportController.js";
 export { HouseholdController } from "./HouseholdController.js";

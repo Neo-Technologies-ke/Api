@@ -1,6 +1,7 @@
 import {
   CampusRepo,
   ListRepo,
+  GroupJoinRequestRepo,
   GroupMemberRepo,
   GroupRepo,
   GroupReportRepo,
@@ -26,6 +27,7 @@ import { UserRepo, ChurchRepo, RoleRepo, RoleMemberRepo, RolePermissionRepo, Use
 export class Repos {
   public campus: CampusRepo;
   public list: ListRepo;
+  public groupJoinRequest: GroupJoinRequestRepo;
   public groupMember: GroupMemberRepo;
   public group: GroupRepo;
   public groupReport: GroupReportRepo;
@@ -62,6 +64,7 @@ export class Repos {
   constructor() {
     this.campus = new CampusRepo();
     this.list = new ListRepo();
+    this.groupJoinRequest = new GroupJoinRequestRepo();
     this.groupMember = new GroupMemberRepo();
     this.group = new GroupRepo();
     this.groupReport = new GroupReportRepo();

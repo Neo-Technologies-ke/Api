@@ -1,5 +1,6 @@
 export { CampusRepo } from "./CampusRepo.js";
 export { ListRepo } from "./ListRepo.js";
+export { GroupJoinRequestRepo } from "./GroupJoinRequestRepo.js";
 export { GroupMemberRepo } from "./GroupMemberRepo.js";
 export { GroupRepo } from "./GroupRepo.js";
 export { GroupReportRepo } from "./GroupReportRepo.js";

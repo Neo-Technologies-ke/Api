@@ -1,4 +1,4 @@
-import { controller, httpGet, httpPost, requestParam } from "inversify-express-utils";
+import { controller, httpGet, httpPost, httpDelete, requestParam } from "inversify-express-utils";
 import express from "express";
 import { MessagingBaseController } from "./MessagingBaseController.js";
 import { Connection } from "../models/index.js";
@@ -74,6 +74,21 @@ export class ConnectionController extends MessagingBaseController {
       const result = this.repos.connection.convertAllToModel(savedConnections);
 
       return result;
+    });
+  }
+
+  @httpDelete("/:id")
+  public async delete(@requestParam("id") id: string, req: express.Request, res: express.Response): Promise<any> {
+    return this.actionWrapperAnon(req, res, async () => {
+      const connections = await this.repos.connection.loadBySocketId(id);
+      if (connections && connections.length > 0) {
+        await this.repos.connection.deleteForSocket(id);
+        const c = connections[0] as Connection;
+        await DeliveryHelper.sendAttendance(c.churchId, c.conversationId);
+      } else {
+        await this.repos.connection.deleteForSocket(id);
+      }
+      return {};
     });
   }
 
