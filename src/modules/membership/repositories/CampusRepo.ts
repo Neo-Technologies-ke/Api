@@ -20,7 +20,7 @@ export class CampusRepo {
       city: model.city,
       state: model.state,
       zip: model.zip,
-      removed: false as any
+      removed: false
     }).execute();
     return model;
   }
@@ -40,15 +40,15 @@ export class CampusRepo {
   }
 
   public async delete(churchId: string, id: string) {
-    await getDb().updateTable("campuses").set({ removed: true as any }).where("id", "=", id).where("churchId", "=", churchId).execute();
+    await getDb().updateTable("campuses").set({ removed: true }).where("id", "=", id).where("churchId", "=", churchId).execute();
   }
 
   public async load(churchId: string, id: string) {
-    return (await getDb().selectFrom("campuses").selectAll().where("id", "=", id).where("churchId", "=", churchId).where("removed", "=", false as any).executeTakeFirst()) ?? null;
+    return (await getDb().selectFrom("campuses").selectAll().where("id", "=", id).where("churchId", "=", churchId).where("removed", "=", false).executeTakeFirst()) ?? null;
   }
 
   public async loadAll(churchId: string) {
-    return getDb().selectFrom("campuses").selectAll().where("churchId", "=", churchId).where("removed", "=", false as any).orderBy("name").execute();
+    return getDb().selectFrom("campuses").selectAll().where("churchId", "=", churchId).where("removed", "=", false).orderBy("name").execute();
   }
 
   public convertToModel(_churchId: string, data: any): Campus {
