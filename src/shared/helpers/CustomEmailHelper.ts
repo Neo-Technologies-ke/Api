@@ -21,12 +21,15 @@ export class CustomEnvironment extends EnvironmentBase {
 
 export class EmailHelper extends OldEmailHelper {
   public static readTemplate(templateName: string): string {
-    // First try to read from custom templates directory
-    const customPath = path.join(process.cwd(), "src", "shared", "templates", templateName);
-    if (fs.existsSync(customPath)) {
-      return fs.readFileSync(customPath, "utf8");
+    const candidates = [
+      path.join(process.cwd(), "src", "shared", "templates", templateName),
+      path.join(process.cwd(), "dist", "src", "shared", "templates", templateName),
+      path.join(process.cwd(), "src", "shared", "templates", "LifeReformationEmailTemplate.html"),
+      path.join(process.cwd(), "dist", "src", "shared", "templates", "LifeReformationEmailTemplate.html"),
+    ];
+    for (const p of candidates) {
+      if (fs.existsSync(p)) return fs.readFileSync(p, "utf8");
     }
-    // Fall back to apihelper templates
     return OldEmailHelper.readTemplate(templateName);
   }
   public static async sendTemplatedEmail(
@@ -42,37 +45,15 @@ export class EmailHelper extends OldEmailHelper {
       | "LifeReformationEmailTemplate.html" = "EmailTemplate.html",
     replyTo?: string
   ): Promise<void> {
-    if (EnvironmentBase.mailSystem === "LRC_OAUTH") {
-      if (!appName) appName = "LRC B1";
-      if (!appUrl) appUrl = "https://lifereformationcentre.org";
-      const template = EmailHelper.readTemplate(emailTemplate);
-      const body = template
-        .replace("{appLink}", appUrl)
-        .replace("{appName}", appName)
-        .replace("{contents}", contents);
-      await EmailHelper.sendEmail({ from, to, subject, body, replyTo });
-    } else {
-      // For custom templates, we need to handle them differently
-      if (emailTemplate === "LifeReformationEmailTemplate.html") {
-        const template = EmailHelper.readTemplate(emailTemplate);
-        const body = template
-          .replace("{appLink}", appUrl)
-          .replace("{appName}", appName)
-          .replace("{contents}", contents);
-        await OldEmailHelper.sendEmail({ from, to, subject, body, replyTo });
-      } else {
-        await OldEmailHelper.sendTemplatedEmail(
-          from,
-          to,
-          appName,
-          appUrl,
-          subject,
-          contents,
-          emailTemplate,
-          replyTo
-        );
-      }
-    }
+    if (!appName) appName = "Life Reformation Centre";
+    if (!appUrl) appUrl = "https://lifereformationcentre.org";
+    const template = EmailHelper.readTemplate(emailTemplate);
+    const body = template
+      .replace("{appLink}", appUrl)
+      .replace("{appName}", appName)
+      .replace("{subject}", subject)
+      .replace("{contents}", contents);
+    await EmailHelper.sendEmail({ from, to, subject, body, replyTo });
   }
 
   public static async sendEmail({
