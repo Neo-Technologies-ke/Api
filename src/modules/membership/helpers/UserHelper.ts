@@ -70,7 +70,7 @@ export class UserHelper {
   }
 
   static sendInviteEmail(email: string, personName: string, contextName: string, churchName: string, loginLink: string, isExistingUser: boolean): Promise<any> {
-    const appName = churchName || "ChurchApps";
+    const appName = churchName || "Life Reformation Centre";
     const appUrl = Environment.b1AdminRoot;
     const actionLabel = isExistingUser ? "Log In" : "Sign Up";
     const subject = "You've been added to " + contextName;
