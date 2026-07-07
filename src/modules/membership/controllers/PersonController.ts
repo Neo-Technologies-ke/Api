@@ -310,6 +310,22 @@ export class PersonController extends MembershipBaseController {
     });
   }
 
+  @httpGet("/list")
+  public async getList(req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (au) => {
+      if (!au.checkAccess(Permissions.people.view)) return this.json({}, 401);
+      const pageSize = req.query.pageSize ? parseInt(req.query.pageSize.toString(), 10) : 0;
+      let data: any[];
+      if (pageSize > 0) {
+        data = (await this.repos.person.loadPage(au.churchId, pageSize)) as any[];
+      } else {
+        data = (await this.repos.person.loadAll(au.churchId)) as any[];
+      }
+      const result = this.repos.person.convertAllToModelWithPermissions(au.churchId, data, au.checkAccess(Permissions.people.edit));
+      return await this.filterPeople(result, au);
+    });
+  }
+
   @httpPost("/search")
   public async searchPost(req: express.Request<{}, {}, { email?: string; term?: string }>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {

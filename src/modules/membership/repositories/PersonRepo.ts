@@ -147,6 +147,10 @@ export class PersonRepo {
     return getDb().selectFrom("people").selectAll().where("churchId", "=", churchId).where("removed", "=", false as any).execute();
   }
 
+  public async loadPage(churchId: string, pageSize: number) {
+    return getDb().selectFrom("people").selectAll().where("churchId", "=", churchId).where("removed", "=", false as any).orderBy("id", "asc").limit(pageSize).execute();
+  }
+
   public async loadByIds(churchId: string, ids: string[]) {
     if (!ids.length) return [];
     return getDb().selectFrom("people").selectAll().where("id", "in", ids).where("churchId", "=", churchId).execute();
