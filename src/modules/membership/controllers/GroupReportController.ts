@@ -14,7 +14,13 @@ export class GroupReportController extends MembershipBaseController {
       let rows: any[];
 
       if (req.query.groupId) {
-        rows = await this.repos.groupReport.loadForGroup(au.churchId, req.query.groupId.toString());
+        const groupId = req.query.groupId.toString();
+        // Check if user is a leader of this group
+        const isGroupLeader = au.leaderGroupIds?.includes(groupId);
+        if (!canViewAll && !isGroupLeader) {
+          return this.json({ error: "Access denied" }, 401);
+        }
+        rows = await this.repos.groupReport.loadForGroup(au.churchId, groupId);
       } else if (!canViewAll) {
         rows = await this.repos.groupReport.loadForPerson(au.churchId, au.personId);
       } else {
@@ -67,11 +73,24 @@ export class GroupReportController extends MembershipBaseController {
       if (report.id) {
         const existing = await this.repos.groupReport.load(au.churchId, report.id);
         if (!existing) return this.json({ error: "Not found" }, 404);
-        if (!canEditAll && existing.personId !== au.personId) return this.json({ error: "Access denied" }, 401);
+        
+        // Check if user is a leader of the group
+        const isGroupLeader = au.leaderGroupIds?.includes(existing.groupId || "");
+        if (!canEditAll && existing.personId !== au.personId && !isGroupLeader) {
+          return this.json({ error: "Access denied" }, 401);
+        }
         if (!canEditAll) report.status = existing.status;
       } else {
         report.personId = au.personId;
         if (!report.reportDate) report.reportDate = new Date().toISOString().split("T")[0];
+        
+        // Check if user is a leader of the group when creating a report
+        if (report.groupId) {
+          const isGroupLeader = au.leaderGroupIds?.includes(report.groupId);
+          if (!canEditAll && !isGroupLeader) {
+            return this.json({ error: "Access denied" }, 401);
+          }
+        }
       }
 
       return this.repos.groupReport.save(report);
@@ -84,7 +103,13 @@ export class GroupReportController extends MembershipBaseController {
       const existing = await this.repos.groupReport.load(au.churchId, id);
       if (!existing) return this.json({ error: "Not found" }, 404);
       const canEditAll = au.checkAccess(Permissions.groupReports.edit) || au.checkAccess(Permissions.groups.edit);
-      if (!canEditAll && existing.personId !== au.personId) return this.json({ error: "Access denied" }, 401);
+      
+      // Check if user is a leader of the group
+      const isGroupLeader = au.leaderGroupIds?.includes(existing.groupId || "");
+      if (!canEditAll && existing.personId !== au.personId && !isGroupLeader) {
+        return this.json({ error: "Access denied" }, 401);
+      }
+      
       await this.repos.groupReport.delete(au.churchId, id);
       return this.json({});
     });
