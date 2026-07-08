@@ -343,11 +343,19 @@ export class PersonController extends MembershipBaseController {
 
   @httpGet("/demographics")
   public async getDemographics(req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
+    console.log("[PersonController.getDemographics] Called");
     return this.actionWrapper(req, res, async (au) => {
-      if (!au.checkAccess(Permissions.people.view)) return this.json({}, 401);
+      console.log("[PersonController.getDemographics] churchId:", au.churchId, "permissions:", au.permissions);
+      if (!au.checkAccess(Permissions.people.view)) {
+        console.log("[PersonController.getDemographics] Permission denied");
+        return this.json({}, 401);
+      }
       const data = (await this.repos.person.loadAll(au.churchId)) as any[];
+      console.log("[PersonController.getDemographics] data from DB:", Array.isArray(data) ? data.length : "not array");
       const result = this.repos.person.convertAllToModelWithPermissions(au.churchId, data, au.checkAccess(Permissions.people.edit));
+      console.log("[PersonController.getDemographics] result after convert:", Array.isArray(result) ? result.length : "not array");
       const filtered = await this.filterPeople(result, au);
+      console.log("[PersonController.getDemographics] filtered:", Array.isArray(filtered) ? filtered.length : "not array");
 
       const genderCount: Record<string, number> = {};
       const maritalStatusCount: Record<string, number> = {};
@@ -385,7 +393,7 @@ export class PersonController extends MembershipBaseController {
         }
       });
 
-      return {
+      const demographics = {
         total: filtered.length,
         ageGroups: Object.entries(ageGroups).map(([group, v]) => ({ group, ...v })),
         membershipStatus: Object.entries(membershipStatusCount).map(([name, count]) => ({ name, count })),
@@ -393,6 +401,8 @@ export class PersonController extends MembershipBaseController {
         maritalStatus: Object.entries(maritalStatusCount).map(([name, count]) => ({ name, count })),
         campus: Object.entries(campusCount).map(([name, v]) => ({ name, count: v.count, id: v.id }))
       };
+      console.log("[PersonController.getDemographics] returning:", JSON.stringify(demographics).substring(0, 200));
+      return demographics;
     });
   }
 
