@@ -34,4 +34,9 @@ export { SongRepo } from "./SongRepo.js";
 export { ArrangementRepo } from "./ArrangementRepo.js";
 export { ArrangementKeyRepo } from "./ArrangementKeyRepo.js";
 
+export { RoomRepo } from "./RoomRepo.js";
+export { ResourceRepo } from "./ResourceRepo.js";
+export { EventBookingRepo } from "./EventBookingRepo.js";
+export { CalendarBlockoutRepo } from "./CalendarBlockoutRepo.js";
+
 export { Repos } from "./Repos.js";

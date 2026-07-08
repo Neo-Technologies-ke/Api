@@ -27,7 +27,11 @@ import {
   SongDetailLinkRepo,
   SongRepo,
   ArrangementRepo,
-  ArrangementKeyRepo
+  ArrangementKeyRepo,
+  RoomRepo,
+  ResourceRepo,
+  EventBookingRepo,
+  CalendarBlockoutRepo
 } from "./index.js";
 
 export class Repos {
@@ -60,6 +64,10 @@ export class Repos {
   public song: SongRepo;
   public arrangement: ArrangementRepo;
   public arrangementKey: ArrangementKeyRepo;
+  public room: RoomRepo;
+  public resource: ResourceRepo;
+  public eventBooking: EventBookingRepo;
+  public calendarBlockout: CalendarBlockoutRepo;
 
   public static getCurrent = () => new Repos();
 
@@ -93,5 +101,9 @@ export class Repos {
     this.song = new SongRepo();
     this.arrangement = new ArrangementRepo();
     this.arrangementKey = new ArrangementKeyRepo();
+    this.room = new RoomRepo();
+    this.resource = new ResourceRepo();
+    this.eventBooking = new EventBookingRepo();
+    this.calendarBlockout = new CalendarBlockoutRepo();
   }
 }

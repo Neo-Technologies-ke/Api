@@ -32,3 +32,8 @@ export { ArrangementKey } from "./ArrangementKey.js";
 export { SongDetail } from "./SongDetail.js";
 export { SongDetailLink } from "./SongDetailLink.js";
 export { Song } from "./Song.js";
+
+export { Room } from "./Room.js";
+export { Resource } from "./Resource.js";
+export { EventBooking } from "./EventBooking.js";
+export { CalendarBlockout } from "./CalendarBlockout.js";
