@@ -278,69 +278,6 @@ export class PersonController extends MembershipBaseController {
     });
   }
 
-  @httpGet("/:id")
-  public async get(@requestParam("id") id: string, req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
-    return this.actionWrapper(req, res, async (au) => {
-      if (au.personId !== id && !au.checkAccess(Permissions.people.view) && !(await this.isMember(au.membershipStatus))) return this.json({}, 401);
-      else {
-        const data = await this.repos.person.load(au.churchId, id);
-        if (!data) return null;
-        const result = this.repos.person.convertToModelWithPermissions(au.churchId, data, au.checkAccess(Permissions.people.edit));
-        await this.appendFormSubmissions(au.churchId, result, this.repos);
-        return result;
-      }
-    });
-  }
-
-  @httpGet("/")
-  public async getAll(req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
-    console.log("[PersonController.getAll] Called - path:", req.path);
-    return this.actionWrapper(req, res, async (au) => {
-      if (!au.checkAccess(Permissions.people.view) && !(await this.isMember(au.membershipStatus))) return this.json({}, 401);
-      else {
-        const pageSize = req.query.pageSize ? parseInt(req.query.pageSize.toString(), 10) : 0;
-        let data: any[];
-        if (au.checkAccess(Permissions.people.view)) {
-          if (pageSize > 0) {
-            data = (await this.repos.person.loadPage(au.churchId, pageSize)) as any[];
-          } else {
-            data = (await this.repos.person.loadAll(au.churchId)) as any[];
-          }
-        } else {
-          const directoryVisibility = await this.getDirectoryVisibilitySetting(au.churchId);
-          data = (await this.repos.person.loadMembersByVisibility(au.churchId, directoryVisibility)) as any[];
-        }
-        const result = this.repos.person.convertAllToModelWithPermissions(au.churchId, data, au.checkAccess(Permissions.people.edit));
-        return await this.filterPeople(result, au);
-      }
-    });
-  }
-
-  @httpGet("/list")
-  public async getList(req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
-    return this.actionWrapper(req, res, async (au) => {
-      console.log("[PersonController.getList] churchId:", au.churchId, "permissions:", au.permissions);
-      if (!au.checkAccess(Permissions.people.view)) {
-        console.log("[PersonController.getList] Permission denied for People__View");
-        return this.json({}, 401);
-      }
-      const pageSize = req.query.pageSize ? parseInt(req.query.pageSize.toString(), 10) : 0;
-      console.log("[PersonController.getList] pageSize:", pageSize);
-      let data: any[];
-      if (pageSize > 0) {
-        data = (await this.repos.person.loadPage(au.churchId, pageSize)) as any[];
-      } else {
-        data = (await this.repos.person.loadAll(au.churchId)) as any[];
-      }
-      console.log("[PersonController.getList] data from DB:", Array.isArray(data) ? data.length : "not array", data);
-      const result = this.repos.person.convertAllToModelWithPermissions(au.churchId, data, au.checkAccess(Permissions.people.edit));
-      console.log("[PersonController.getList] result after convert:", Array.isArray(result) ? result.length : "not array", result);
-      const filtered = await this.filterPeople(result, au);
-      console.log("[PersonController.getList] filtered result:", Array.isArray(filtered) ? filtered.length : "not array", filtered);
-      return filtered;
-    });
-  }
-
   @httpGet("/demographics")
   public async getDemographics(req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
     console.log("[PersonController.getDemographics] Called");
@@ -403,6 +340,69 @@ export class PersonController extends MembershipBaseController {
       };
       console.log("[PersonController.getDemographics] returning:", JSON.stringify(demographics).substring(0, 200));
       return demographics;
+    });
+  }
+
+  @httpGet("/:id")
+  public async get(@requestParam("id") id: string, req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (au) => {
+      if (au.personId !== id && !au.checkAccess(Permissions.people.view) && !(await this.isMember(au.membershipStatus))) return this.json({}, 401);
+      else {
+        const data = await this.repos.person.load(au.churchId, id);
+        if (!data) return null;
+        const result = this.repos.person.convertToModelWithPermissions(au.churchId, data, au.checkAccess(Permissions.people.edit));
+        await this.appendFormSubmissions(au.churchId, result, this.repos);
+        return result;
+      }
+    });
+  }
+
+  @httpGet("/")
+  public async getAll(req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
+    console.log("[PersonController.getAll] Called - path:", req.path);
+    return this.actionWrapper(req, res, async (au) => {
+      if (!au.checkAccess(Permissions.people.view) && !(await this.isMember(au.membershipStatus))) return this.json({}, 401);
+      else {
+        const pageSize = req.query.pageSize ? parseInt(req.query.pageSize.toString(), 10) : 0;
+        let data: any[];
+        if (au.checkAccess(Permissions.people.view)) {
+          if (pageSize > 0) {
+            data = (await this.repos.person.loadPage(au.churchId, pageSize)) as any[];
+          } else {
+            data = (await this.repos.person.loadAll(au.churchId)) as any[];
+          }
+        } else {
+          const directoryVisibility = await this.getDirectoryVisibilitySetting(au.churchId);
+          data = (await this.repos.person.loadMembersByVisibility(au.churchId, directoryVisibility)) as any[];
+        }
+        const result = this.repos.person.convertAllToModelWithPermissions(au.churchId, data, au.checkAccess(Permissions.people.edit));
+        return await this.filterPeople(result, au);
+      }
+    });
+  }
+
+  @httpGet("/list")
+  public async getList(req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (au) => {
+      console.log("[PersonController.getList] churchId:", au.churchId, "permissions:", au.permissions);
+      if (!au.checkAccess(Permissions.people.view)) {
+        console.log("[PersonController.getList] Permission denied for People__View");
+        return this.json({}, 401);
+      }
+      const pageSize = req.query.pageSize ? parseInt(req.query.pageSize.toString(), 10) : 0;
+      console.log("[PersonController.getList] pageSize:", pageSize);
+      let data: any[];
+      if (pageSize > 0) {
+        data = (await this.repos.person.loadPage(au.churchId, pageSize)) as any[];
+      } else {
+        data = (await this.repos.person.loadAll(au.churchId)) as any[];
+      }
+      console.log("[PersonController.getList] data from DB:", Array.isArray(data) ? data.length : "not array", data);
+      const result = this.repos.person.convertAllToModelWithPermissions(au.churchId, data, au.checkAccess(Permissions.people.edit));
+      console.log("[PersonController.getList] result after convert:", Array.isArray(result) ? result.length : "not array", result);
+      const filtered = await this.filterPeople(result, au);
+      console.log("[PersonController.getList] filtered result:", Array.isArray(filtered) ? filtered.length : "not array", filtered);
+      return filtered;
     });
   }
 
