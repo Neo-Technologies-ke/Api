@@ -8,6 +8,7 @@ import { ArrayHelper, FileStorageHelper } from "@churchapps/apihelper";
 import { Environment, Permissions, PersonHelper, UserChurchHelper } from "../helpers/index.js";
 import { AuthenticatedUser } from "@churchapps/apihelper";
 import { EmailHelper } from "../../../shared/helpers/CustomEmailHelper.js";
+import { DateHelper } from "../../../shared/helpers/DateHelper.js";
 
 @controller("/membership/people")
 export class PersonController extends MembershipBaseController {
@@ -322,7 +323,7 @@ export class PersonController extends MembershipBaseController {
         }
         campusCount[campusName].count++;
 
-        const age = PersonHelper.getAge(p.birthDate);
+        const age = DateHelper.getAge(p.birthDate);
         const g = (gender === "Male" ? "male" : gender === "Female" ? "female" : "unassigned");
         const bucket = age === null ? null : age < 18 ? "0-17" : age < 35 ? "18-34" : age < 55 ? "35-54" : "55+";
         if (bucket && ageGroups[bucket]) {
