@@ -341,6 +341,61 @@ export class PersonController extends MembershipBaseController {
     });
   }
 
+  @httpGet("/demographics")
+  public async getDemographics(req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (au) => {
+      if (!au.checkAccess(Permissions.people.view)) return this.json({}, 401);
+      const data = (await this.repos.person.loadAll(au.churchId)) as any[];
+      const result = this.repos.person.convertAllToModelWithPermissions(au.churchId, data, au.checkAccess(Permissions.people.edit));
+      const filtered = await this.filterPeople(result, au);
+
+      const genderCount: Record<string, number> = {};
+      const maritalStatusCount: Record<string, number> = {};
+      const membershipStatusCount: Record<string, number> = {};
+      const campusCount: Record<string, { count: number; id: string }> = {};
+      const ageGroups: Record<string, { female: number; male: number; unassigned: number }> = {
+        "0-17": { female: 0, male: 0, unassigned: 0 },
+        "18-34": { female: 0, male: 0, unassigned: 0 },
+        "35-54": { female: 0, male: 0, unassigned: 0 },
+        "55+": { female: 0, male: 0, unassigned: 0 }
+      };
+
+      filtered.forEach((p: any) => {
+        const gender = p.gender || "Unassigned";
+        genderCount[gender] = (genderCount[gender] || 0) + 1;
+
+        const maritalStatus = p.maritalStatus || "Unassigned";
+        maritalStatusCount[maritalStatus] = (maritalStatusCount[maritalStatus] || 0) + 1;
+
+        const membershipStatus = p.membershipStatus || "Unassigned";
+        membershipStatusCount[membershipStatus] = (membershipStatusCount[membershipStatus] || 0) + 1;
+
+        const campusId = p.campusId || "";
+        const campusName = p.campus?.name || "Unassigned";
+        if (!campusCount[campusName]) {
+          campusCount[campusName] = { count: 0, id: campusId };
+        }
+        campusCount[campusName].count++;
+
+        const age = p.age;
+        const g = (gender === "Male" ? "male" : gender === "Female" ? "female" : "unassigned");
+        const bucket = age === null ? null : age < 18 ? "0-17" : age < 35 ? "18-34" : age < 55 ? "35-54" : "55+";
+        if (bucket && ageGroups[bucket]) {
+          ageGroups[bucket][g]++;
+        }
+      });
+
+      return {
+        total: filtered.length,
+        ageGroups: Object.entries(ageGroups).map(([group, v]) => ({ group, ...v })),
+        membershipStatus: Object.entries(membershipStatusCount).map(([name, count]) => ({ name, count })),
+        gender: Object.entries(genderCount).map(([name, count]) => ({ name, count })),
+        maritalStatus: Object.entries(maritalStatusCount).map(([name, count]) => ({ name, count })),
+        campus: Object.entries(campusCount).map(([name, v]) => ({ name, count: v.count, id: v.id }))
+      };
+    });
+  }
+
   @httpPost("/search")
   public async searchPost(req: express.Request<{}, {}, { email?: string; term?: string }>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
