@@ -322,7 +322,7 @@ export class PersonController extends MembershipBaseController {
         }
         campusCount[campusName].count++;
 
-        const age = p.age;
+        const age = PersonHelper.getAge(p.birthDate);
         const g = (gender === "Male" ? "male" : gender === "Female" ? "female" : "unassigned");
         const bucket = age === null ? null : age < 18 ? "0-17" : age < 35 ? "18-34" : age < 55 ? "35-54" : "55+";
         if (bucket && ageGroups[bucket]) {
