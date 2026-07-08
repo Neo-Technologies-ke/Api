@@ -77,6 +77,8 @@ export const permissionsList: IPermission[] = [
   { apiName: "MembershipApi", section: "Plans", action: "Edit", displaySection: "Forms and Plans", displayAction: "Edit Plans" },
   { apiName: "MembershipApi", section: "Group Members", action: "Edit", displaySection: "People and Groups", displayAction: "Edit Group Members" },
   { apiName: "MembershipApi", section: "Groups", action: "Edit", displaySection: "People and Groups", displayAction: "Edit Groups" },
+  { apiName: "MembershipApi", section: "Group Reports", action: "Edit", displaySection: "People and Groups", displayAction: "Edit Group Reports" },
+  { apiName: "MembershipApi", section: "Group Reports", action: "View", displaySection: "People and Groups", displayAction: "View Group Reports" },
   { apiName: "MembershipApi", section: "Households", action: "Edit", displaySection: "People and Groups", displayAction: "Edit Households" },
   { apiName: "MembershipApi", section: "People", action: "Edit", displaySection: "People and Groups", displayAction: "Edit People" },
   { apiName: "MembershipApi", section: "People", action: "Edit Self", displaySection: "People and Groups", displayAction: "Edit Self" },
@@ -128,6 +130,7 @@ export type ContentType =
   | "Plans"
   | "Group Members"
   | "Groups"
+  | "Group Reports"
   | "Donations"
   | "Attendance"
   | "Chat"

@@ -10,7 +10,7 @@ export class GroupReportController extends MembershipBaseController {
   @httpGet("/")
   public async getAll(req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
-      const canViewAll = au.checkAccess(Permissions.groupReports.view) || au.checkAccess(Permissions.groups.edit);
+      const canViewAll = au.checkAccess(Permissions.groupReports.view);
       let rows: any[];
 
       if (req.query.groupId) {
@@ -53,8 +53,11 @@ export class GroupReportController extends MembershipBaseController {
       if (!row) return this.json({ error: "Not found" }, 404);
       const report = this.repos.groupReport.convertToModel(au.churchId, row);
 
-      const canViewAll = au.checkAccess(Permissions.groupReports.view) || au.checkAccess(Permissions.groups.edit);
-      if (!canViewAll && report.personId !== au.personId) return this.json({ error: "Access denied" }, 401);
+      const canViewAll = au.checkAccess(Permissions.groupReports.view);
+      const isGroupLeader = report.groupId && au.leaderGroupIds?.includes(report.groupId);
+      if (!canViewAll && report.personId !== au.personId && !isGroupLeader) {
+        return this.json({ error: "Access denied" }, 401);
+      }
 
       report.person = (await this.repos.person.load(au.churchId, report.personId)) as any;
       report.group = (await this.repos.group.load(au.churchId, report.groupId)) as any;
@@ -68,7 +71,7 @@ export class GroupReportController extends MembershipBaseController {
       const report: GroupReport = req.body;
       report.churchId = au.churchId;
 
-      const canEditAll = au.checkAccess(Permissions.groupReports.edit) || au.checkAccess(Permissions.groups.edit);
+      const canEditAll = au.checkAccess(Permissions.groupReports.edit);
 
       if (report.id) {
         const existing = await this.repos.groupReport.load(au.churchId, report.id);
@@ -102,7 +105,7 @@ export class GroupReportController extends MembershipBaseController {
     return this.actionWrapper(req, res, async (au) => {
       const existing = await this.repos.groupReport.load(au.churchId, id);
       if (!existing) return this.json({ error: "Not found" }, 404);
-      const canEditAll = au.checkAccess(Permissions.groupReports.edit) || au.checkAccess(Permissions.groups.edit);
+      const canEditAll = au.checkAccess(Permissions.groupReports.edit);
       
       // Check if user is a leader of the group
       const isGroupLeader = au.leaderGroupIds?.includes(existing.groupId || "");
