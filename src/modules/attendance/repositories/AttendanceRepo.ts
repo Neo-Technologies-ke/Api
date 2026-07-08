@@ -48,6 +48,26 @@ export class AttendanceRepo {
     return rows.rows;
   }
 
+  public async loadGroupSummary(churchId: string) {
+    const rows = await sql<any>`
+      SELECT s.groupId, COUNT(DISTINCT s.id) AS sessionCount, AVG(visitCount) AS averageAttendance
+      FROM sessions s
+      LEFT JOIN (
+        SELECT vs.sessionId, COUNT(DISTINCT vs.visitId) AS visitCount
+        FROM visitSessions vs
+        INNER JOIN visits v ON v.id = vs.visitId AND v.churchId = ${churchId}
+        GROUP BY vs.sessionId
+      ) vc ON vc.sessionId = s.id
+      WHERE s.churchId = ${churchId} AND s.groupId IS NOT NULL AND s.groupId != ''
+      GROUP BY s.groupId
+    `.execute(getDb());
+    return (rows.rows || []).map((r: any) => ({
+      groupId: r.groupId,
+      sessionCount: Number(r.sessionCount) || 0,
+      averageAttendance: r.averageAttendance ? Math.round(Number(r.averageAttendance)) : 0
+    }));
+  }
+
   public async loadByGroupId(churchId: string, groupId: string, startDate: Date, endDate: Date) {
     const start = DateHelper.toMysqlDate(startDate);
     const end = DateHelper.toMysqlDate(endDate);

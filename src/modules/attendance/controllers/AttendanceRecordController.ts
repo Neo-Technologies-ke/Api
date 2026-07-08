@@ -28,6 +28,15 @@ export class AttendanceRecordController extends AttendanceBaseController {
     });
   }
 
+  @httpGet("/groupsummary")
+  public async groupSummary(req: express.Request<{}, {}, null>, res: express.Response): Promise<unknown> {
+    return this.actionWrapper(req, res, async (au) => {
+      if (!au.checkAccess(Permissions.attendance.viewSummary)) return this.json([], 200);
+      const data = await this.repos.attendance.loadGroupSummary(au.churchId);
+      return data;
+    });
+  }
+
   @httpGet("/groups")
   public async group(req: express.Request<{}, {}, null>, res: express.Response): Promise<unknown> {
     return this.actionWrapper(req, res, async (au) => {
