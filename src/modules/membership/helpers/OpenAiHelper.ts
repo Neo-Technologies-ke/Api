@@ -48,7 +48,7 @@ export class OpenAiHelper {
       const response = await axios.post(
         "https://openrouter.ai/api/v1/chat/completions",
         {
-          model: "tngtech/deepseek-r1t2-chimera:free",
+          model: "meta-llama/llama-3-8b-instruct:free",
           messages: [
             {
               role: "system",
