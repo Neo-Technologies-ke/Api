@@ -313,16 +313,25 @@ export class PersonController extends MembershipBaseController {
   @httpGet("/list")
   public async getList(req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
-      if (!au.checkAccess(Permissions.people.view)) return this.json({}, 401);
+      console.log("[PersonController.getList] churchId:", au.churchId, "permissions:", au.permissions);
+      if (!au.checkAccess(Permissions.people.view)) {
+        console.log("[PersonController.getList] Permission denied for People__View");
+        return this.json({}, 401);
+      }
       const pageSize = req.query.pageSize ? parseInt(req.query.pageSize.toString(), 10) : 0;
+      console.log("[PersonController.getList] pageSize:", pageSize);
       let data: any[];
       if (pageSize > 0) {
         data = (await this.repos.person.loadPage(au.churchId, pageSize)) as any[];
       } else {
         data = (await this.repos.person.loadAll(au.churchId)) as any[];
       }
+      console.log("[PersonController.getList] data from DB:", Array.isArray(data) ? data.length : "not array", data);
       const result = this.repos.person.convertAllToModelWithPermissions(au.churchId, data, au.checkAccess(Permissions.people.edit));
-      return await this.filterPeople(result, au);
+      console.log("[PersonController.getList] result after convert:", Array.isArray(result) ? result.length : "not array", result);
+      const filtered = await this.filterPeople(result, au);
+      console.log("[PersonController.getList] filtered result:", Array.isArray(filtered) ? filtered.length : "not array", filtered);
+      return filtered;
     });
   }
 
