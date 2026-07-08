@@ -294,12 +294,18 @@ export class PersonController extends MembershipBaseController {
 
   @httpGet("/")
   public async getAll(req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
+    console.log("[PersonController.getAll] Called - path:", req.path);
     return this.actionWrapper(req, res, async (au) => {
       if (!au.checkAccess(Permissions.people.view) && !(await this.isMember(au.membershipStatus))) return this.json({}, 401);
       else {
+        const pageSize = req.query.pageSize ? parseInt(req.query.pageSize.toString(), 10) : 0;
         let data: any[];
         if (au.checkAccess(Permissions.people.view)) {
-          data = (await this.repos.person.loadAll(au.churchId)) as any[];
+          if (pageSize > 0) {
+            data = (await this.repos.person.loadPage(au.churchId, pageSize)) as any[];
+          } else {
+            data = (await this.repos.person.loadAll(au.churchId)) as any[];
+          }
         } else {
           const directoryVisibility = await this.getDirectoryVisibilitySetting(au.churchId);
           data = (await this.repos.person.loadMembersByVisibility(au.churchId, directoryVisibility)) as any[];
