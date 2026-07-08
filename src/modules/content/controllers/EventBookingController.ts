@@ -35,8 +35,8 @@ export class EventBookingController extends ContentBaseController {
   public async save(@requestBody() model: EventBooking, req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
       model.churchId = au.churchId;
-      model.personId = au.personId;
-      model.personName = au.displayName;
+      model.personId = au.id;
+      model.personName = `${au.firstName} ${au.lastName}`;
       return await this.repos.eventBooking.save(model);
     });
   }
