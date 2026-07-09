@@ -20,6 +20,11 @@ export class QueryController extends MembershipBaseController {
     return this.json({ message: "QueryController POST is working" });
   }
 
+  @httpPost("/simple")
+  public async simplePostEndpoint(req: express.Request<{}, {}, any>, res: express.Response): Promise<any> {
+    return this.json({ message: "Simple POST without actionWrapper" });
+  }
+
   @httpPost("/members")
   public async queryMembers(req: express.Request<{}, {}, any>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
