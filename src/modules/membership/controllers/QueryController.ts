@@ -30,56 +30,7 @@ export class QueryController extends BaseController {
 
   @httpGet("/members")
   public async queryMembers(req: express.Request<{}, {}, any>, res: express.Response): Promise<any> {
-    return this.actionWrapper(req, res, async (au) => {
-      const { text, subDomain, siteUrl } = req.query;
-
-      if (text && text !== "") {
-        OpenAiHelper.initialize();
-        //Proccess the natural language query
-        const apiRequestPrompt = await OpenAiHelper.buildPrompt(text as string);
-        const aiResponse = await OpenAiHelper.getCompletion(apiRequestPrompt, subDomain as string, siteUrl as string);
-        if (aiResponse && aiResponse.length > 0) {
-          let peopleData: any[] = (await this.repos.person.loadAll(au.churchId)) as any[];
-          aiResponse.forEach((resp: { field: string; value: string; operator: string }) => {
-            switch (resp.field) {
-              case "age":
-                peopleData.forEach((p) => {
-                  p.age = PersonHelper.getAge(p.birthDate);
-                });
-                peopleData = ArrayHelper.getAllOperator(peopleData, "age", resp.value, resp.operator, "number");
-                break;
-              case "yearsMarried":
-                peopleData.forEach((p) => {
-                  p.yearsMarried = PersonHelper.getAge(p.anniversary);
-                });
-                peopleData = ArrayHelper.getAllOperator(peopleData, "yearsMarried", resp.value, resp.operator, "number");
-                break;
-              case "birthMonth":
-                peopleData.forEach((p) => {
-                  p.birthMonth = PersonHelper.getBirthMonth(p.birthDate);
-                });
-                peopleData = ArrayHelper.getAllOperator(peopleData, "birthMonth", resp.value, resp.operator, "number");
-                break;
-              case "anniversaryMonth":
-                peopleData.forEach((p) => {
-                  p.anniversaryMonth = PersonHelper.getBirthMonth(p.anniversary);
-                });
-                peopleData = ArrayHelper.getAllOperator(peopleData, "anniversaryMonth", resp.value, resp.operator, "number");
-                break;
-              case "anniversary": peopleData = ArrayHelper.getAllOperator(peopleData, "anniversary", resp.value, resp.operator); break;
-              // case "phone"
-              default: peopleData = ArrayHelper.getAllOperator(peopleData, resp.field, resp.value, resp.operator); break;
-            }
-          });
-          const result = this.repos.person.convertAllToModelWithPermissions(au.churchId, peopleData, au.checkAccess(Permissions.people.edit));
-          return result;
-        } else {
-          return { error: "No valid response from AI service" };
-        }
-      } else {
-        return { error: "Search text is required" };
-      }
-    });
+    return { message: "Members endpoint reached", query: req.query };
   }
 
   @httpGet("/simple-members")
