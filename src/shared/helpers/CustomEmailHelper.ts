@@ -46,7 +46,7 @@ export class EmailHelper extends OldEmailHelper {
     replyTo?: string
   ): Promise<void> {
     if (!appName) appName = "Life Reformation Centre";
-    if (!appUrl) appUrl = "https://lifereformationcentre.org";
+    if (!appUrl) appUrl = "https://portal.lifereformationcentre.org";
     const template = EmailHelper.readTemplate(emailTemplate);
     const body = template
       .replace("{appLink}", appUrl)

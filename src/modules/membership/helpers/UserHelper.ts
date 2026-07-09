@@ -84,7 +84,7 @@ export class UserHelper {
 
   static sendForgotEmail(email: string, code: string, appName: string, appUrl: string): Promise<any> {
     if (!appName) appName = "Life Reformation Centre";
-    if (!appUrl) appUrl = "https://lifereformationcentre.org";
+    if (!appUrl) appUrl = "https://portal.lifereformationcentre.org";
 
     const contents =
       "<h2>Reset Password</h2>" +
