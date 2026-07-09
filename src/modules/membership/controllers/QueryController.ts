@@ -15,6 +15,11 @@ export class QueryController extends MembershipBaseController {
     return this.json({ message: "QueryController is working" });
   }
 
+  @httpPost("/test")
+  public async testPostEndpoint(req: express.Request<{}, {}, any>, res: express.Response): Promise<any> {
+    return this.json({ message: "QueryController POST is working" });
+  }
+
   @httpPost("/members")
   public async queryMembers(req: express.Request<{}, {}, any>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
