@@ -1,4 +1,4 @@
-import { controller, httpPost } from "inversify-express-utils";
+import { controller, httpGet, httpPost } from "inversify-express-utils";
 import express from "express";
 import { MembershipBaseController } from "./MembershipBaseController.js";
 import { ArrayHelper } from "@churchapps/apihelper";
@@ -8,6 +8,11 @@ import { OpenAiHelper, Permissions, PersonHelper } from "../helpers/index.js";
 export class QueryController extends MembershipBaseController {
   constructor() {
     super();
+  }
+
+  @httpGet("/test")
+  public async testEndpoint(req: express.Request<{}, {}, any>, res: express.Response): Promise<any> {
+    return this.json({ message: "QueryController is working" });
   }
 
   @httpPost("/members")
