@@ -9,6 +9,7 @@ import { PayPalGatewayProvider } from "../../shared/helpers/gateways/PayPalGatew
 import { SquareGatewayProvider } from "../../shared/helpers/gateways/SquareGatewayProvider.js";
 import { EPayMintsGatewayProvider } from "../../shared/helpers/gateways/EPayMintsGatewayProvider.js";
 import { Environment } from "../../shared/helpers/Environment.js";
+import { EmailHelper } from "../../shared/helpers/EmailHelper.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,9 +19,9 @@ export class PlaygroundController extends GivingBaseController {
 
   // Middleware to check if playground is allowed
   private isPlaygroundEnabled(): boolean {
-    // Only enable playground in development environment
+    // Enable playground in development and production for testing
     const env = Environment.currentEnvironment || process.env.ENVIRONMENT || "dev";
-    return env === "dev" || env === "development" || env === "local";
+    return env === "dev" || env === "development" || env === "local" || env === "prod";
   }
 
   private sendDisabledResponse(res: Response): void {
@@ -702,6 +703,48 @@ export class PlaygroundController extends GivingBaseController {
         provider,
         input: { customerId, paymentMethodId },
         result
+      });
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        error: (error as Error).message
+      });
+    }
+  }
+
+  @httpPost("/send-test-email")
+  public async sendTestEmail(req: Request, res: Response): Promise<any> {
+    if (!this.isPlaygroundEnabled()) {
+      return this.sendDisabledResponse(res);
+    }
+
+    try {
+      const { to, subject, message } = req.body;
+      const from = "noreply@lifereformationcentre.org";
+      const emailSubject = subject || "Test Email from B1Api";
+      const emailMessage = message || "This is a test email from the B1Api playground.";
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #2c3e50;">Test Email</h2>
+          <p style="color: #34495e; line-height: 1.6;">${emailMessage}</p>
+          <p style="color: #95a5a6; font-size: 12px; margin-top: 30px;">
+            Sent from B1Api Playground at ${new Date().toISOString()}
+          </p>
+        </div>
+      `;
+
+      const success = await EmailHelper.send({
+        to: to || "james.chugi@lifereformationcentre.org",
+        subject: emailSubject,
+        html: htmlContent,
+        from: from
+      });
+
+      return res.json({
+        success: success,
+        message: success ? "Email sent successfully" : "Failed to send email",
+        from,
+        to: to || "james.chugi@lifereformationcentre.org"
       });
     } catch (error) {
       return res.status(400).json({
