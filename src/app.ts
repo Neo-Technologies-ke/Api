@@ -229,6 +229,7 @@ async function loadModuleBindings(container: Container) {
     const moduleImports: Array<{ name: string; import: Promise<any> }> = [
       { name: "Shared", import: import("./shared/controllers/HealthController.js") },
       { name: "Membership", import: import("./modules/membership/controllers/index.js") },
+      { name: "MembershipQuery", import: import("./modules/membership/controllers/QueryController.js") },
       { name: "Attendance", import: import("./modules/attendance/controllers/index.js") },
       { name: "Content", import: import("./modules/content/controllers/index.js") },
       { name: "Doing", import: import("./modules/doing/controllers/index.js") },
@@ -236,9 +237,6 @@ async function loadModuleBindings(container: Container) {
       { name: "Messaging", import: import("./modules/messaging/controllers/index.js") },
       { name: "Reporting", import: import("./modules/reporting/controllers/index.js") }
     ];
-
-    // Explicitly import QueryController to ensure decorators execute
-    import("./modules/membership/controllers/QueryController.js");
 
     // Only load playground in development environment
     const env = Environment.currentEnvironment || process.env.ENVIRONMENT || "dev";
