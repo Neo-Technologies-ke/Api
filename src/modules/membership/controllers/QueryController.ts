@@ -1,16 +1,13 @@
 import { controller, httpGet, httpPost } from "inversify-express-utils";
 import express from "express";
-import { BaseController } from "../../../shared/infrastructure/BaseController.js";
+import { MembershipBaseController } from "./MembershipBaseController.js";
 import { ArrayHelper } from "@churchapps/apihelper";
 import { OpenAiHelper, Permissions, PersonHelper } from "../helpers/index.js";
-import { Repos } from "../repositories/index.js";
 
-@controller("/membership/query")
-export class QueryController extends BaseController {
-  public repos: Repos;
-
+@controller("/query")
+export class QueryController extends MembershipBaseController {
   constructor() {
-    super("membership");
+    super();
   }
 
   @httpGet("/test")
