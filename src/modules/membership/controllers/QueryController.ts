@@ -28,16 +28,16 @@ export class QueryController extends BaseController {
     return this.json({ message: "Simple POST without actionWrapper" });
   }
 
-  @httpPost("/members")
+  @httpGet("/members")
   public async queryMembers(req: express.Request<{}, {}, any>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
-      const { text, subDomain, siteUrl } = req.body;
+      const { text, subDomain, siteUrl } = req.query;
 
       if (text && text !== "") {
         OpenAiHelper.initialize();
         //Proccess the natural language query
-        const apiRequestPrompt = await OpenAiHelper.buildPrompt(text);
-        const aiResponse = await OpenAiHelper.getCompletion(apiRequestPrompt, subDomain, siteUrl);
+        const apiRequestPrompt = await OpenAiHelper.buildPrompt(text as string);
+        const aiResponse = await OpenAiHelper.getCompletion(apiRequestPrompt, subDomain as string, siteUrl as string);
         if (aiResponse && aiResponse.length > 0) {
           let peopleData: any[] = (await this.repos.person.loadAll(au.churchId)) as any[];
           aiResponse.forEach((resp: { field: string; value: string; operator: string }) => {
@@ -82,8 +82,8 @@ export class QueryController extends BaseController {
     });
   }
 
-  @httpPost("/simple-members")
+  @httpGet("/simple-members")
   public async simpleMembers(req: express.Request<{}, {}, any>, res: express.Response): Promise<any> {
-    return { message: "Simple members endpoint works", body: req.body };
+    return { message: "Simple members endpoint works", query: req.query };
   }
 }
