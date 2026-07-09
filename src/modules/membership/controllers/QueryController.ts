@@ -81,4 +81,9 @@ export class QueryController extends BaseController {
       }
     });
   }
+
+  @httpPost("/simple-members")
+  public async simpleMembers(req: express.Request<{}, {}, any>, res: express.Response): Promise<any> {
+    return { message: "Simple members endpoint works", body: req.body };
+  }
 }
