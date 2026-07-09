@@ -6,6 +6,10 @@ import { OpenAiHelper, Permissions, PersonHelper } from "../helpers/index.js";
 
 @controller("/membership/query")
 export class QueryController extends MembershipBaseController {
+  constructor() {
+    super();
+  }
+
   @httpPost("/members")
   public async queryMembers(req: express.Request<{}, {}, any>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
