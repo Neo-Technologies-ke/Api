@@ -5,7 +5,7 @@ import { Person, Household, SearchCondition, Group, VisibilityPreference } from 
 import { Repos } from "../repositories/index.js";
 import { FormSubmission, Form } from "../models/index.js";
 import { ArrayHelper, FileStorageHelper } from "@churchapps/apihelper";
-import { Environment, Permissions, PersonHelper, UserChurchHelper } from "../helpers/index.js";
+import { Environment, Permissions, PersonHelper, UserChurchHelper, OpenAiHelper } from "../helpers/index.js";
 import { AuthenticatedUser } from "@churchapps/apihelper";
 import { EmailHelper } from "../../../shared/helpers/CustomEmailHelper.js";
 import { DateHelper } from "../../../shared/helpers/DateHelper.js";
@@ -528,6 +528,60 @@ export class PersonController extends MembershipBaseController {
         const promises = idsToDelete.map(id => this.repos.person.delete(au.churchId, id));
         await Promise.all(promises);
         return this.json({ success: true, deleted: idsToDelete.length, deletedIds: idsToDelete });
+      }
+    });
+  }
+
+  @httpPost("/query/members")
+  public async queryMembers(req: express.Request<{}, {}, any>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (au) => {
+      const { text, subDomain, siteUrl } = req.body;
+
+      if (text && text !== "") {
+        OpenAiHelper.initialize();
+        //Proccess the natural language query
+        const apiRequestPrompt = await OpenAiHelper.buildPrompt(text);
+        const aiResponse = await OpenAiHelper.getCompletion(apiRequestPrompt, subDomain, siteUrl);
+        if (aiResponse && aiResponse.length > 0) {
+          let peopleData: any[] = (await this.repos.person.loadAll(au.churchId)) as any[];
+          aiResponse.forEach((resp: { field: string; value: string; operator: string }) => {
+            switch (resp.field) {
+              case "age":
+                peopleData.forEach((p) => {
+                  p.age = PersonHelper.getAge(p.birthDate);
+                });
+                peopleData = ArrayHelper.getAllOperator(peopleData, "age", resp.value, resp.operator, "number");
+                break;
+              case "yearsMarried":
+                peopleData.forEach((p) => {
+                  p.yearsMarried = PersonHelper.getAge(p.anniversary);
+                });
+                peopleData = ArrayHelper.getAllOperator(peopleData, "yearsMarried", resp.value, resp.operator, "number");
+                break;
+              case "birthMonth":
+                peopleData.forEach((p) => {
+                  p.birthMonth = PersonHelper.getBirthMonth(p.birthDate);
+                });
+                peopleData = ArrayHelper.getAllOperator(peopleData, "birthMonth", resp.value, resp.operator, "number");
+                break;
+              case "anniversaryMonth":
+                peopleData.forEach((p) => {
+                  p.anniversaryMonth = PersonHelper.getBirthMonth(p.anniversary);
+                });
+                peopleData = ArrayHelper.getAllOperator(peopleData, "anniversaryMonth", resp.value, resp.operator, "number");
+                break;
+              case "anniversary": peopleData = ArrayHelper.getAllOperator(peopleData, "anniversary", resp.value, resp.operator); break;
+              // case "phone"
+              default: peopleData = ArrayHelper.getAllOperator(peopleData, resp.field, resp.value, resp.operator); break;
+            }
+          });
+          const result = this.repos.person.convertAllToModelWithPermissions(au.churchId, peopleData, au.checkAccess(Permissions.people.edit));
+          return result;
+        } else {
+          return { error: "No valid response from AI service" };
+        }
+      } else {
+        return { error: "Search text is required" };
       }
     });
   }
