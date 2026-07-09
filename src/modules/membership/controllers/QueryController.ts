@@ -7,7 +7,7 @@ import { OpenAiHelper, Permissions, PersonHelper } from "../helpers/index.js";
 @controller("/membership/query")
 export class QueryController extends MembershipBaseController {
   constructor() {
-    super();
+    super("membership");
   }
 
   @httpPost("/members")
