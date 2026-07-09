@@ -237,6 +237,9 @@ async function loadModuleBindings(container: Container) {
       { name: "Reporting", import: import("./modules/reporting/controllers/index.js") }
     ];
 
+    // Explicitly import QueryController to ensure decorators execute
+    import("./modules/membership/controllers/QueryController.js");
+
     // Only load playground in development environment
     const env = Environment.currentEnvironment || process.env.ENVIRONMENT || "dev";
     if (env === "dev" || env === "development" || env === "local") {
