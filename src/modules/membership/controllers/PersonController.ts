@@ -515,6 +515,22 @@ export class PersonController extends MembershipBaseController {
     });
   }
 
+  @httpPost("/bulk-delete")
+  public async bulkDelete(req: express.Request<{}, {}, { ids: string[] }>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (au) => {
+      if (!au.checkAccess(Permissions.people.edit)) return this.json({}, 401);
+      else {
+        const { ids } = req.body;
+        if (!ids || !Array.isArray(ids) || ids.length === 0) {
+          return this.json({ error: "ids array is required" }, 400);
+        }
+        const promises = ids.map(id => this.repos.person.delete(au.churchId, id));
+        await Promise.all(promises);
+        return this.json({ success: true, deleted: ids.length });
+      }
+    });
+  }
+
   private async savePhoto(churchId: string, person: Person) {
     const base64 = person.photo.split(",")[1];
     const key = "/" + churchId + "/membership/people/" + person.id + ".png";
