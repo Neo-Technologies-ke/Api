@@ -47,10 +47,7 @@ export const configureModuleRoutes = (app: express.Application) => {
     const contextMiddleware = createModuleContextMiddleware(moduleName);
 
     // Apply module context middleware to all routes under this prefix
-    // Skip membership module temporarily to test QueryController
-    if (moduleName !== "membership") {
-      app.use(fullPrefix, contextMiddleware);
-    }
+    app.use(fullPrefix, contextMiddleware);
 
     // Context middleware configured for module
   });
