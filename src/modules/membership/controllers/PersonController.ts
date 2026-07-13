@@ -542,49 +542,53 @@ export class PersonController extends MembershipBaseController {
       }
 
       if (text && text !== "") {
-        // OpenAiHelper.initialize();
-        //Proccess the natural language query
-        // const apiRequestPrompt = await OpenAiHelper.buildPrompt(text);
-        // const aiResponse = await OpenAiHelper.getCompletion(apiRequestPrompt, subDomain, siteUrl);
-        // if (aiResponse && aiResponse.length > 0) {
-        //   let peopleData: any[] = (await this.repos.person.loadAll(churchId)) as any[];
-        //   aiResponse.forEach((resp: { field: string; value: string; operator: string }) => {
-        //     switch (resp.field) {
-        //       case "age":
-        //         peopleData.forEach((p) => {
-        //           p.age = PersonHelper.getAge(p.birthDate);
-        //         });
-        //         peopleData = ArrayHelper.getAllOperator(peopleData, "age", resp.value, resp.operator, "number");
-        //         break;
-        //       case "yearsMarried":
-        //         peopleData.forEach((p) => {
-        //           p.yearsMarried = PersonHelper.getAge(p.anniversary);
-        //         });
-        //         peopleData = ArrayHelper.getAllOperator(peopleData, "yearsMarried", resp.value, resp.operator, "number");
-        //         break;
-        //       case "birthMonth":
-        //         peopleData.forEach((p) => {
-        //           p.birthMonth = PersonHelper.getBirthMonth(p.birthDate);
-        //         });
-        //         peopleData = ArrayHelper.getAllOperator(peopleData, "birthMonth", resp.value, resp.operator, "number");
-        //         break;
-        //       case "anniversaryMonth":
-        //         peopleData.forEach((p) => {
-        //           p.anniversaryMonth = PersonHelper.getBirthMonth(p.anniversary);
-        //         });
-        //         peopleData = ArrayHelper.getAllOperator(peopleData, "anniversaryMonth", resp.value, resp.operator, "number");
-        //         break;
-        //       case "anniversary": peopleData = ArrayHelper.getAllOperator(peopleData, "anniversary", resp.value, resp.operator); break;
-        //       // case "phone"
-        //       default: peopleData = ArrayHelper.getAllOperator(peopleData, resp.field, resp.value, resp.operator); break;
-        //     }
-        //   });
-        //   const result = this.repos.person.convertAllToModelWithPermissions(churchId, peopleData, true);
-        //   return result;
-        // } else {
-        //   return { error: "No valid response from AI service" };
-        // }
-        return { message: "Endpoint reached, AI integration disabled for testing", text, churchId };
+        try {
+          OpenAiHelper.initialize();
+          //Proccess the natural language query
+          const apiRequestPrompt = await OpenAiHelper.buildPrompt(text);
+          const aiResponse = await OpenAiHelper.getCompletion(apiRequestPrompt, subDomain, siteUrl);
+          if (aiResponse && aiResponse.length > 0) {
+            let peopleData: any[] = (await this.repos.person.loadAll(churchId)) as any[];
+            aiResponse.forEach((resp: { field: string; value: string; operator: string }) => {
+              switch (resp.field) {
+                case "age":
+                  peopleData.forEach((p) => {
+                    p.age = PersonHelper.getAge(p.birthDate);
+                  });
+                  peopleData = ArrayHelper.getAllOperator(peopleData, "age", resp.value, resp.operator, "number");
+                  break;
+                case "yearsMarried":
+                  peopleData.forEach((p) => {
+                    p.yearsMarried = PersonHelper.getAge(p.anniversary);
+                  });
+                  peopleData = ArrayHelper.getAllOperator(peopleData, "yearsMarried", resp.value, resp.operator, "number");
+                  break;
+                case "birthMonth":
+                  peopleData.forEach((p) => {
+                    p.birthMonth = PersonHelper.getBirthMonth(p.birthDate);
+                  });
+                  peopleData = ArrayHelper.getAllOperator(peopleData, "birthMonth", resp.value, resp.operator, "number");
+                  break;
+                case "anniversaryMonth":
+                  peopleData.forEach((p) => {
+                    p.anniversaryMonth = PersonHelper.getBirthMonth(p.anniversary);
+                  });
+                  peopleData = ArrayHelper.getAllOperator(peopleData, "anniversaryMonth", resp.value, resp.operator, "number");
+                  break;
+                case "anniversary": peopleData = ArrayHelper.getAllOperator(peopleData, "anniversary", resp.value, resp.operator); break;
+                // case "phone"
+                default: peopleData = ArrayHelper.getAllOperator(peopleData, resp.field, resp.value, resp.operator); break;
+              }
+            });
+            const result = this.repos.person.convertAllToModelWithPermissions(churchId, peopleData, true);
+            return result;
+          } else {
+            return { error: "No valid response from AI service" };
+          }
+        } catch (error: any) {
+          console.error("AI service error:", error);
+          return { error: "AI service unavailable", details: error.message };
+        }
       } else {
         return { error: "Search text is required" };
       }
