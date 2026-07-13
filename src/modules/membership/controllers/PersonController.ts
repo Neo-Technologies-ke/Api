@@ -534,8 +534,12 @@ export class PersonController extends MembershipBaseController {
 
   @httpPost("/query/members")
   public async queryMembers(req: express.Request<{}, {}, any>, res: express.Response): Promise<any> {
-    return this.actionWrapper(req, res, async (au) => {
-      const { text, subDomain, siteUrl } = req.body;
+    return this.actionWrapperAnon(req, res, async () => {
+      const { text, subDomain, siteUrl, churchId } = req.body;
+
+      if (!churchId) {
+        return { error: "churchId is required" };
+      }
 
       if (text && text !== "") {
         OpenAiHelper.initialize();
@@ -543,7 +547,7 @@ export class PersonController extends MembershipBaseController {
         const apiRequestPrompt = await OpenAiHelper.buildPrompt(text);
         const aiResponse = await OpenAiHelper.getCompletion(apiRequestPrompt, subDomain, siteUrl);
         if (aiResponse && aiResponse.length > 0) {
-          let peopleData: any[] = (await this.repos.person.loadAll(au.churchId)) as any[];
+          let peopleData: any[] = (await this.repos.person.loadAll(churchId)) as any[];
           aiResponse.forEach((resp: { field: string; value: string; operator: string }) => {
             switch (resp.field) {
               case "age":
@@ -575,7 +579,7 @@ export class PersonController extends MembershipBaseController {
               default: peopleData = ArrayHelper.getAllOperator(peopleData, resp.field, resp.value, resp.operator); break;
             }
           });
-          const result = this.repos.person.convertAllToModelWithPermissions(au.churchId, peopleData, au.checkAccess(Permissions.people.edit));
+          const result = this.repos.person.convertAllToModelWithPermissions(churchId, peopleData, true);
           return result;
         } else {
           return { error: "No valid response from AI service" };
