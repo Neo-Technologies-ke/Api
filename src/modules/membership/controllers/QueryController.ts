@@ -7,8 +7,6 @@ import { Repos } from "../repositories/index.js";
 
 @controller("/membership/query")
 export class QueryController extends BaseController {
-  public repos!: Repos;
-
   constructor() {
     super("membership");
   }
