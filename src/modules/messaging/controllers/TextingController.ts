@@ -194,7 +194,7 @@ export class TextingController extends MessagingBaseController {
       if (!config) return this.json({ error: "No texting provider configured" }, 400);
 
       const provider = getProvider(config.providerName);
-      const result = await provider.sendMessage(config, phoneNumber, message);
+      const result = await provider.sendMessage(config, phoneNumber.replace(/\s+/g, ""), message);
 
       const sentText: SentText = {
         churchId: au.churchId,
