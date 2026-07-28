@@ -291,10 +291,9 @@ export class UserController extends MembershipBaseController {
           stepStart = Date.now();
           const existingUC = await this.repos.userChurch.loadByUserId(user.id, register.churchId);
           if (!existingUC) {
-            const matchingPeople = await this.repos.person.searchEmail(register.churchId, user.email);
-            const exactMatch = matchingPeople.find((p: Person) => p.contactInfo?.email?.toLowerCase() === user.email.toLowerCase());
-            if (exactMatch) {
-              await this.repos.userChurch.save({ userId: user.id, churchId: register.churchId, personId: exactMatch.id });
+            const exactMatches = await this.repos.person.loadByEmailExact(register.churchId, user.email);
+            if (exactMatches.length > 0) {
+              await this.repos.userChurch.save({ userId: user.id, churchId: register.churchId, personId: exactMatches[0].id });
             }
           }
           console.log("Register: link churchId", Date.now() - stepStart, "ms");
@@ -426,8 +425,7 @@ export class UserController extends MembershipBaseController {
       const matches: Array<{ firstName: string; lastName: string; churchId: string; churchName: string }> = [];
 
       for (const church of churches) {
-        const matchingPeople = await this.repos.person.searchEmail(church.id, email);
-        const exactMatches = matchingPeople.filter((p: Person) => p.contactInfo?.email?.toLowerCase() === email.toLowerCase());
+        const exactMatches = await this.repos.person.loadByEmailExact(church.id, email);
         for (const person of exactMatches) {
           matches.push({
             firstName: person.name?.first || "",
