@@ -11,7 +11,10 @@ export class PersonHelper extends BasePersonHelper {
   }
   public static async getPerson(churchId: string, email: string, firstName: string, lastName: string, canEdit: boolean) {
     const repos = await this.repos();
-    const data: Person[] = (await repos.person.searchEmail(churchId, email)) as Person[];
+    // Exact match only - a partial/LIKE match here would risk linking this identity
+    // to an unrelated existing person (and their household) whenever emails overlap
+    // as substrings.
+    const data: Person[] = (await repos.person.loadByEmailExact(churchId, email)) as Person[];
     if (data.length === 0) {
       const household: Household = { churchId, name: lastName };
       await repos.household.save(household);

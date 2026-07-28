@@ -43,7 +43,10 @@ export class RegistrationController extends ContentBaseController {
       if (data.guestInfo) {
         // Look up or create guest person via membership module
         const membershipRepos: any = await RepoManager.getRepos("membership");
-        const existing = await membershipRepos.person.searchEmail(data.churchId, data.guestInfo.email);
+        // Exact match only - searchEmail does a partial LIKE match intended for admin
+        // search UIs and would risk attaching this registration to an unrelated
+        // person/household whenever emails overlap as substrings.
+        const existing = await membershipRepos.person.loadByEmailExact(data.churchId, data.guestInfo.email);
         if (existing && existing.length > 0) {
           personId = existing[0].id;
           householdId = existing[0].householdId;

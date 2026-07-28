@@ -98,6 +98,24 @@ export class EventController extends ContentBaseController {
     });
   }
 
+  @httpGet("/church")
+  public async getChurchCalendar(req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (au) => {
+      const result = await this.repos.event.loadAll(au.churchId);
+      await CalendarHelper.addExceptionDates(result, this.repos);
+      return result;
+    });
+  }
+
+  @httpGet("/my")
+  public async getMyCalendar(req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (au) => {
+      const result = await this.repos.event.loadForGroups(au.churchId, au.groupIds || []);
+      await CalendarHelper.addExceptionDates(result, this.repos);
+      return result;
+    });
+  }
+
   @httpGet("/:id")
   public async get(@requestParam("id") id: string, req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {

@@ -242,6 +242,21 @@ export class PersonRepo {
       .execute() as any;
   }
 
+  // Strict, case-insensitive exact-match lookup. Use this (not searchEmail, which does a
+  // partial LIKE match intended for admin search-as-you-type UIs) whenever resolving a
+  // person's identity by email, e.g. login/registration linking or household assignment.
+  // Using the partial match for identity resolution can attach a person to the wrong
+  // existing record (and therefore the wrong household) whenever emails overlap as substrings.
+  public async loadByEmailExact(churchId: string, email: string): Promise<any[]> {
+    if (!email) return [];
+    return getDb().selectFrom("people").selectAll()
+      .where("churchId", "=", churchId)
+      .where(sql`LOWER(email)`, "=", email.toLowerCase())
+      .where("removed", "=", false as any)
+      .limit(1)
+      .execute() as any;
+  }
+
   public async loadAttendees(churchId: string, campusId: string, serviceId: string, serviceTimeId: string, categoryName: string, groupId: string, startDate: Date, endDate: Date) {
     const conditions: ReturnType<typeof sql>[] = [];
     conditions.push(sql`p.churchId = ${churchId} AND v.visitDate BETWEEN ${startDate as any} AND ${endDate as any}`);

@@ -4,21 +4,38 @@ import { Sermon } from "../models/index.js";
 import { Environment } from "../../../shared/helpers/Environment.js";
 
 export class YouTubeHelper {
+  private static getBestThumbnail(thumbnails: any, videoId: string) {
+    const best = thumbnails?.maxres?.url
+      || thumbnails?.standard?.url
+      || thumbnails?.high?.url
+      || thumbnails?.medium?.url
+      || thumbnails?.default?.url;
+    return best || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+  }
+
   public static async getSermon(sermonId: string) {
-    console.log(`🔍 YouTubeHelper.getSermon() - Environment.youTubeApiKey value: "${Environment.youTubeApiKey}"`);
-    console.log(`🔍 YouTubeHelper.getSermon() - Environment.currentEnvironment: "${Environment.currentEnvironment}"`);
+    if (!Environment.youTubeApiKey) {
+      throw new Error("YouTube API key is not configured. Please set YOUTUBE_API_KEY.");
+    }
     const url = `https://www.googleapis.com/youtube/v3/videos?part=contentDetails%2C+snippet&id=${sermonId}&key=${Environment.youTubeApiKey}`;
-    console.log(url);
     const result = { title: "", thumbnail: "", description: "", duration: 0, publishDate: new Date() };
-    const json: any = (await axios.get(url)).data;
+    let json: any;
+    try {
+      json = (await axios.get(url)).data;
+    } catch (error: any) {
+      const message = error?.response?.data?.error?.message || error.message;
+      throw new Error(`YouTube API request failed: ${message}`);
+    }
     if (json.items?.length > 0) {
       const snippet = json.items[0].snippet;
       const details = json.items[0].contentDetails;
       result.duration = this.parseDuration(details.duration);
       result.title = snippet.title;
       result.description = snippet.description;
-      result.thumbnail = snippet.thumbnails?.maxres?.url || "";
+      result.thumbnail = this.getBestThumbnail(snippet.thumbnails, sermonId);
       result.publishDate = new Date(snippet.publishedAt);
+    } else {
+      throw new Error("Video not found. Please check the YouTube video ID.");
     }
     return result;
   }
@@ -92,7 +109,7 @@ export class YouTubeHelper {
       const sermon: Sermon = {
         churchId,
         title: item.snippet.title,
-        thumbnail: item.snippet.thumbnails?.maxres?.url || item.snippet.thumbnails?.high?.url || "",
+        thumbnail: this.getBestThumbnail(item.snippet.thumbnails, item.id.videoId),
         description: item.snippet.description,
         publishDate: new Date(item.snippet.publishedAt),
         videoType: "youtube",

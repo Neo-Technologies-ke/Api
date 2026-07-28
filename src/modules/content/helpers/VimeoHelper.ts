@@ -4,16 +4,27 @@ import { Environment } from "../../../shared/helpers/Environment.js";
 
 export class VimeoHelper {
   public static async getSermon(videoId: string) {
+    if (!Environment.vimeoToken) {
+      throw new Error("Vimeo API token is not configured. Please set VIMEO_TOKEN.");
+    }
     const url = `https://api.vimeo.com/videos/${videoId}`;
     const axiosConfig = { headers: { Authorization: "Bearer " + Environment.vimeoToken } };
     const result = { title: "", thumbnail: "", description: "", duration: 0, publishDate: new Date() };
-    const json: any = (await axios.get(url, axiosConfig)).data;
+    let json: any;
+    try {
+      json = (await axios.get(url, axiosConfig)).data;
+    } catch (error: any) {
+      const message = error?.response?.data?.error || error.message;
+      throw new Error(`Vimeo API request failed: ${message}`);
+    }
     if (json) {
       result.title = json.name;
-      result.thumbnail = json.pictures.base_link || "";
+      result.thumbnail = json.pictures?.base_link || "";
       result.description = json.description;
       result.duration = json.duration;
       result.publishDate = new Date(json.created_time);
+    } else {
+      throw new Error("Video not found. Please check the Vimeo video ID.");
     }
     return result;
   }

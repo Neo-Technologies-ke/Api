@@ -82,6 +82,16 @@ export class EventRepo {
       .orderBy("start").execute() as any;
   }
 
+  public async loadForGroups(churchId: string, groupIds: string[]) {
+    let query = getDb().selectFrom("events").selectAll().where("churchId", "=", churchId);
+    if (groupIds && groupIds.length > 0) {
+      query = query.where((eb) => eb.or([eb("groupId", "in", groupIds), eb("groupId", "is", null)]));
+    } else {
+      query = query.where("groupId", "is", null);
+    }
+    return query.orderBy("start").execute() as any;
+  }
+
   public async loadPublicForGroup(churchId: string, groupId: string) {
     return getDb().selectFrom("events").selectAll()
       .where("groupId", "=", groupId)
