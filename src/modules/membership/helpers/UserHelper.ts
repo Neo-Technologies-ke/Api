@@ -59,7 +59,7 @@ export class UserHelper {
 
   static sendWelcomeEmail(email: string, code: string, appName: string, appUrl: string): Promise<any> {
     if (!appName) appName = "Life Reformation Centre";
-    if (!appUrl) appUrl = Environment.b1AdminRoot;
+    if (!appUrl) appUrl = "https://portal.lifereformationcentre.org";
 
     const contents =
       "<h2>Welcome To " + appName + "</h2>" +
@@ -69,9 +69,10 @@ export class UserHelper {
     return EmailHelper.sendTemplatedEmail(Environment.supportEmail, email, appName, appUrl, "Welcome To " + appName + ".", contents, "LifeReformationEmailTemplate.html");
   }
 
-  static sendInviteEmail(email: string, personName: string, contextName: string, churchName: string, loginLink: string, isExistingUser: boolean): Promise<any> {
+  static sendInviteEmail(email: string, personName: string, contextName: string, churchName: string, loginLink: string, isExistingUser: boolean, subDomain?: string): Promise<any> {
     const appName = churchName || "Life Reformation Centre";
-    const appUrl = Environment.b1AdminRoot;
+    const portalRoot = "https://portal.lifereformationcentre.org";
+    const appUrl = subDomain ? `${portalRoot}/${subDomain}` : portalRoot;
     const actionLabel = isExistingUser ? "Log In" : "Sign Up";
     const subject = "You've been added to " + contextName;
     const contents =
