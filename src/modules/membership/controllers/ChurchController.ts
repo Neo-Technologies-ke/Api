@@ -376,6 +376,9 @@ export class ChurchController extends MembershipBaseController {
         return this.json({ errors: [{ message: "Either churchId or subDomain is required" }] }, 400);
       }
       const userChurch = await this.fetchChurchPermissions(au, churchId);
+      if (!userChurch) {
+        return this.json({ errors: [{ message: "You do not have permission to access this church" }] }, 403);
+      }
       const user = await this.repos.user.load(au.id);
 
       const data = await AuthenticatedUser.login([userChurch], user);
