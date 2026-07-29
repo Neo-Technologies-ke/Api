@@ -1,4 +1,4 @@
-import { controller, httpPost, httpGet, requestParam, httpDelete } from "inversify-express-utils";
+import { controller, httpPost, httpGet, requestParam, httpDelete, httpPut } from "inversify-express-utils";
 import express from "express";
 import * as ics from "ics";
 import { ContentBaseController } from "./ContentBaseController.js";
@@ -136,6 +136,20 @@ export class EventController extends ContentBaseController {
       const result = await Promise.all(promises);
       return result;
       // }
+    });
+  }
+
+  @httpPut("/:id")
+  public async update(@requestParam("id") id: string, req: express.Request<{}, {}, Event>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (au) => {
+      if (!au.checkAccess(Permissions.content.edit)) return this.json({}, 401);
+      else {
+        const event = req.body;
+        event.churchId = au.churchId;
+        event.id = id;
+        const result = await this.repos.event.save(event);
+        return result;
+      }
     });
   }
 
