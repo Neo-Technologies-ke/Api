@@ -387,7 +387,18 @@ export class ChurchController extends MembershipBaseController {
   }
 
   private async appendPersonInfo(userChurch: LoginUserChurch, au: AuthenticatedUser, churchId: string) {
-    const uc = (await PersonHelper.claim(au, churchId)).userChurch;
+    const claimResult = await PersonHelper.claim(au, churchId);
+    const uc = claimResult?.userChurch;
+    if (!uc || !uc.personId) {
+      // If no person is claimed, use minimal person info
+      userChurch.person = {
+        id: "",
+        name: { first: "", last: "" },
+        membershipStatus: "Guest"
+      };
+      userChurch.groups = [];
+      return;
+    }
     const p = (await this.repos.person.load(uc.churchId, uc.personId)) as any;
     const groups: Group[] = (await this.repos.group.loadAllForPerson(uc.personId)) as Group[];
     userChurch.person = {
