@@ -1,6 +1,6 @@
 import { controller, httpPost, httpGet, requestParam } from "inversify-express-utils";
 import express from "express";
-import { FileStorageHelper } from "@churchapps/apihelper";
+import { CustomFileStorageHelper } from "../../../shared/helpers/CustomFileStorageHelper.js";
 import { DoingBaseController } from "./DoingBaseController.js";
 import { Task } from "../models/index.js";
 import { Environment } from "../helpers/index.js";
@@ -67,7 +67,7 @@ export class TaskController extends DoingBaseController {
     const base64Parts = base64Str.split(",");
     const base64 = base64Parts.length > 1 ? base64Parts[1] : "";
     const key = "/" + churchId + "/membership/people/" + task.associatedWithId + ".png";
-    await FileStorageHelper.store(key, "image/png", Buffer.from(base64, "base64"));
+    await CustomFileStorageHelper.store(key, "image/png", Buffer.from(base64, "base64"));
     const photoUpdated = new Date();
     const photo: string = Environment.contentRoot + key + "?dt=" + photoUpdated.getTime().toString();
     return photo;
