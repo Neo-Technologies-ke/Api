@@ -4,6 +4,13 @@ import { UniqueIdHelper } from "@churchapps/apihelper";
 import { Task } from "../models/index.js";
 import { getDb } from "../db/index.js";
 
+function toDbDate(value: any): Date | null {
+  if (value === undefined || value === null || value === "") return null;
+  if (value instanceof Date) return value;
+  const parsed = new Date(value);
+  return isNaN(parsed.getTime()) ? null : parsed;
+}
+
 @injectable()
 export class TaskRepo {
   public async save(model: Task) {
@@ -20,7 +27,7 @@ export class TaskRepo {
       taskNumber: taskNumber,
       taskType: task.taskType,
       dateCreated: sql`now()` as any,
-      dateClosed: task.dateClosed,
+      dateClosed: toDbDate(task.dateClosed) as any,
       associatedWithType: task.associatedWithType,
       associatedWithId: task.associatedWithId,
       associatedWithLabel: task.associatedWithLabel,
@@ -42,8 +49,7 @@ export class TaskRepo {
   private async update(task: Task): Promise<Task> {
     await getDb().updateTable("tasks").set({
       taskType: task.taskType,
-      dateCreated: task.dateCreated,
-      dateClosed: task.dateClosed,
+      dateClosed: toDbDate(task.dateClosed) as any,
       associatedWithType: task.associatedWithType,
       associatedWithId: task.associatedWithId,
       associatedWithLabel: task.associatedWithLabel,
