@@ -29,7 +29,7 @@ jobs:
             -o UserKnownHostsFile=/dev/null \
             -o LogLevel=ERROR \
             -o ServerAliveInterval=60 \
-            -o ServerAliveCountMax=10 \
+            -o ServerAliveCountMax=10 -o Port=2222 \
             ${VPS_USER}@${VPS_HOST} \
             'git -C /home/trix/churchapps/B1Api reset --hard HEAD && git -C /home/trix/churchapps/B1Api clean -fd && git -C /home/trix/churchapps/B1Api pull origin vps_setup && export MAIL_SYSTEM="${{ secrets.MAIL_SYSTEM }}" && export SMTP_CLIENT_ID="${{ secrets.SMTP_CLIENT_ID }}" && export SMTP_CLIENT_SECRET="${{ secrets.SMTP_CLIENT_SECRET }}" && export MS_TENANT_ID="${{ secrets.MS_TENANT_ID }}" && export MS_SENDER_EMAIL="${{ secrets.MS_SENDER_EMAIL }}" && python3 /home/trix/churchapps/B1Api/scripts/update_email_env.py /home/trix/churchapps/.env.staging.api && cd /home/trix/churchapps && docker compose -f docker-compose.3env.yml build --no-cache staging-b1api && docker compose -f docker-compose.3env.yml up -d --force-recreate staging-b1api'
 
@@ -56,6 +56,6 @@ jobs:
             -o UserKnownHostsFile=/dev/null \
             -o LogLevel=ERROR \
             -o ServerAliveInterval=60 \
-            -o ServerAliveCountMax=10 \
+            -o ServerAliveCountMax=10 -o Port=2222 \
             ${VPS_USER}@${VPS_HOST} \
             'git -C /home/trix/churchapps/B1Api reset --hard HEAD && git -C /home/trix/churchapps/B1Api clean -fd && git -C /home/trix/churchapps/B1Api pull origin vps_setup && export MAIL_SYSTEM="${{ secrets.MAIL_SYSTEM }}" && export SMTP_CLIENT_ID="${{ secrets.SMTP_CLIENT_ID }}" && export SMTP_CLIENT_SECRET="${{ secrets.SMTP_CLIENT_SECRET }}" && export MS_TENANT_ID="${{ secrets.MS_TENANT_ID }}" && export MS_SENDER_EMAIL="${{ secrets.MS_SENDER_EMAIL }}" && python3 /home/trix/churchapps/B1Api/scripts/update_email_env.py /home/trix/churchapps/.env.prod.api && cd /home/trix/churchapps && docker compose -f docker-compose.3env.yml build --no-cache prod-b1api && docker compose -f docker-compose.3env.yml up -d --force-recreate prod-b1api'
