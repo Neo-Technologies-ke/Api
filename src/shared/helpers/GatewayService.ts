@@ -457,6 +457,30 @@ export class GatewayService {
         maxTransactionAmount: 1000000, // $10,000.00
         notes: ["Subscriptions require Billing Plans", "Order APIs power PayPal smart buttons"]
       },
+      paystack: {
+        supportsOneTimePayments: true,
+        supportsSubscriptions: false,
+        supportsVault: false,
+        supportsACH: false,
+        supportsRefunds: true,
+        supportsPartialRefunds: false,
+        supportsWebhooks: true,
+        supportsOrders: false,
+        supportedPaymentMethods: ["card", "mobile_money", "bank", "ussd"],
+        supportedCurrencies: ["kes", "ngn", "ghs", "zar", "usd"],
+        requiresPlansForSubscriptions: false,
+        requiresCustomerForSubscription: false,
+        supportsInstantCapture: true,
+        supportsManualCapture: false,
+        supportsSCA: false,
+        maxRefundWindow: 90,
+        minTransactionAmount: 100, // smallest currency unit basis (e.g. 1.00 KES)
+        maxTransactionAmount: 100000000,
+        notes: [
+          "Card and M-Pesa (mobile money) both flow through Paystack's Inline checkout",
+          "Webhook URL must be pasted into the Paystack Dashboard manually (no per-merchant webhook API)"
+        ]
+      },
       square: {
         supportsOneTimePayments: true,
         supportsSubscriptions: true,

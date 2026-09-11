@@ -209,7 +209,8 @@ export class DonateController extends GivingBaseController {
       // payment_intent.succeeded is the new standard for ACH payments via Payment Intents API
       // charge.succeeded is kept for backward compatibility during migration
       stripe: ["charge.succeeded", "invoice.paid", "payment_intent.succeeded", "payment_intent.processing"],
-      paypal: ["PAYMENT.CAPTURE.COMPLETED"]
+      paypal: ["PAYMENT.CAPTURE.COMPLETED"],
+      paystack: ["charge.success"]
     };
     return donationEvents[provider as keyof typeof donationEvents]?.includes(eventType) || false;
   }
@@ -409,10 +410,19 @@ export class DonateController extends GivingBaseController {
           return this.json({ error: chargeResult.error || "Charge processing failed" }, 400);
         }
 
-        // For PayPal, we need to log the events since it's captured immediately
-        if (gateway.provider === "paypal") {
-          await GatewayService.logEvent(gateway, churchId, chargeResult.data, chargeResult.data, this.repos);
-          await GatewayService.logDonation(gateway, churchId, chargeResult.data, this.repos);
+        // PayPal and Paystack capture/verify immediately (no async payment_intent lifecycle
+        // like Stripe), so the donation is logged right here rather than waiting on a webhook.
+        // The webhook is still wired up as a reconciliation safety net for either provider;
+        // guard against double-logging in case both paths fire for the same transaction.
+        const providerKey = gateway.provider?.toLowerCase();
+        if (providerKey === "paypal" || providerKey === "paystack") {
+          const existingDonation = chargeResult.transactionId
+            ? await this.repos.donation.loadByTransactionId(churchId, chargeResult.transactionId)
+            : null;
+          if (!existingDonation) {
+            await GatewayService.logEvent(gateway, churchId, chargeResult.data, chargeResult.data, this.repos);
+            await GatewayService.logDonation(gateway, churchId, chargeResult.data, this.repos);
+          }
         }
 
         await this.sendEmails(donationData.person.email, donationData?.church, donationData.funds, donationData?.amount, donationData?.interval, donationData?.billing_cycle_anchor, "one-time");

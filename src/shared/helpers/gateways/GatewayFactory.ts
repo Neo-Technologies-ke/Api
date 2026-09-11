@@ -1,6 +1,7 @@
 import { IGatewayProvider } from "./IGatewayProvider.js";
 import { StripeGatewayProvider } from "./StripeGatewayProvider.js";
 import { PayPalGatewayProvider } from "./PayPalGatewayProvider.js";
+import { PaystackGatewayProvider } from "./PaystackGatewayProvider.js";
 import { SquareGatewayProvider } from "./SquareGatewayProvider.js";
 import { EPayMintsGatewayProvider } from "./EPayMintsGatewayProvider.js";
 
@@ -19,6 +20,7 @@ export class GatewayFactory {
     // Always register production-ready providers
     this.providers.set("stripe", new StripeGatewayProvider());
     this.providers.set("paypal", new PayPalGatewayProvider());
+    this.providers.set("paystack", new PaystackGatewayProvider());
 
     // Load feature flags from environment or config
     this.loadFeatureFlags();
@@ -73,7 +75,7 @@ export class GatewayFactory {
    * Register a custom provider (only if feature flag is enabled)
    */
   static registerProvider(name: string, provider: IGatewayProvider): void {
-    if (!this.featureFlags.enableCustomProviders && !["stripe", "paypal"].includes(name.toLowerCase())) {
+    if (!this.featureFlags.enableCustomProviders && !["stripe", "paypal", "paystack"].includes(name.toLowerCase())) {
       throw new Error("Custom gateway providers are disabled. Enable via ENABLE_CUSTOM_GATEWAY_PROVIDERS environment variable.");
     }
     this.providers.set(name.toLowerCase(), provider);
@@ -117,7 +119,7 @@ export class GatewayFactory {
    * Unregister a provider (mainly for testing)
    */
   static unregisterProvider(name: string): boolean {
-    if (["stripe", "paypal"].includes(name.toLowerCase())) {
+    if (["stripe", "paypal", "paystack"].includes(name.toLowerCase())) {
       console.warn(`Cannot unregister core provider: ${name}`);
       return false;
     }

@@ -3,6 +3,7 @@ export * from "./GatewayFactory.js";
 export * from "./GatewaySettings.js";
 export * from "./StripeGatewayProvider.js";
 export * from "./PayPalGatewayProvider.js";
+export * from "./PaystackGatewayProvider.js";
 export * from "./SquareGatewayProvider.js";
 export * from "./EPayMintsGatewayProvider.js";
 export * from "./AbstractExperimentalGatewayProvider.js";

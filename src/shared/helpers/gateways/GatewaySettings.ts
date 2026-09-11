@@ -35,6 +35,15 @@ export namespace PayPalSettings {
   }
 }
 
+// Paystack-specific settings
+export namespace PaystackSettings {
+  export interface Settings extends BaseGatewaySettings {
+    // Which Paystack checkout channels are offered at the popup. "mobile_money" is what
+    // routes Kenyan donors to M-Pesa; card/bank/ussd are the other Paystack-supported rails.
+    channels?: ("card" | "mobile_money" | "bank" | "bank_transfer" | "ussd" | "qr")[];
+  }
+}
+
 // Square-specific settings (future implementation)
 export namespace SquareSettings {
   export interface Settings extends BaseGatewaySettings {
@@ -63,6 +72,7 @@ export namespace ePayMintsSettings {
 export type GatewaySettings =
   | { provider: "stripe"; settings: StripeSettings.Settings }
   | { provider: "paypal"; settings: PayPalSettings.Settings }
+  | { provider: "paystack"; settings: PaystackSettings.Settings }
   | { provider: "square"; settings: SquareSettings.Settings }
   | { provider: "epaymints"; settings: ePayMintsSettings.Settings };
 
@@ -72,6 +82,10 @@ export function isStripeSettings(settings: any): settings is StripeSettings.Sett
 }
 
 export function isPayPalSettings(settings: any): settings is PayPalSettings.Settings {
+  return settings && typeof settings === "object";
+}
+
+export function isPaystackSettings(settings: any): settings is PaystackSettings.Settings {
   return settings && typeof settings === "object";
 }
 
@@ -90,6 +104,7 @@ export function validateGatewaySettings(provider: string, settings: Record<strin
   switch (provider.toLowerCase()) {
     case "stripe": return isStripeSettings(settings) ? settings : null;
     case "paypal": return isPayPalSettings(settings) ? settings : null;
+    case "paystack": return isPaystackSettings(settings) ? settings : null;
     case "square": return isSquareSettings(settings) ? settings : null;
     case "epaymints": return isEPayMintsSettings(settings) ? settings : null;
     default: return null;
