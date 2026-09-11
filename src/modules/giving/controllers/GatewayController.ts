@@ -51,14 +51,17 @@ export class GatewayController extends GivingBaseController {
             req.body.map(async (gateway) => {
               const validatedSettings = this.validateProviderSettings(gateway.provider, gateway.settings);
               const environment = this.normalizeEnvironment(gateway.environment);
-              const privateKey = typeof gateway.privateKey === "string" ? gateway.privateKey : "";
-              const webhookKey = typeof gateway.webhookKey === "string" ? gateway.webhookKey : "";
+              const existing = gateway.id ? ((await this.repos.gateway.load(au.churchId, gateway.id)) as Gateway | null) : null;
+              const keepExistingSecrets = existing?.provider?.toLowerCase() === gateway.provider?.toLowerCase();
+              const privateKey = typeof gateway.privateKey === "string" && gateway.privateKey !== "" ? gateway.privateKey : null;
+              const webhookKey = typeof gateway.webhookKey === "string" && gateway.webhookKey !== "" ? gateway.webhookKey : null;
 
-              // Encrypt secrets immediately so downstream helpers receive encrypted values
+              // Encrypt secrets immediately so downstream helpers receive encrypted values.
+              // Blank/omitted secrets mean "keep the existing secret" when saving settings.
               const encryptedGateway: Gateway = {
                 ...gateway,
-                privateKey: privateKey ? EncryptionHelper.encrypt(privateKey) : "",
-                webhookKey: webhookKey ? EncryptionHelper.encrypt(webhookKey) : "",
+                privateKey: privateKey ? EncryptionHelper.encrypt(privateKey) : (keepExistingSecrets ? existing?.privateKey || "" : ""),
+                webhookKey: webhookKey ? EncryptionHelper.encrypt(webhookKey) : (keepExistingSecrets ? existing?.webhookKey || "" : ""),
                 settings: validatedSettings,
                 environment,
                 churchId: au.churchId,
