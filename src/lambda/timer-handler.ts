@@ -5,6 +5,7 @@ import { Environment } from "../shared/helpers/Environment.js";
 import { NotificationHelper } from "../modules/messaging/helpers/NotificationHelper.js";
 import { RepoManager } from "../shared/infrastructure/RepoManager.js";
 import { AutomationHelper } from "../modules/bridge/helpers/AutomationHelper.js";
+import { AppointmentReminderHelper } from "../modules/content/helpers/AppointmentReminderHelper.js";
 
 const initEnv = async () => {
   console.log("[initEnv] Starting environment initialization...");
@@ -32,6 +33,10 @@ export const handle15MinTimer = async (_event: ScheduledEvent, _context: Context
     console.log("[handle15MinTimer] Calling initEnv...");
     await initEnv();
     console.log("[handle15MinTimer] initEnv completed in", Date.now() - startTime, "ms");
+
+    const contentRepos = await RepoManager.getRepos<any>("content");
+    const reminderResult = await AppointmentReminderHelper.process(contentRepos);
+    console.log("[handle15MinTimer] appointment reminders:", JSON.stringify(reminderResult));
 
     // Step 1: Escalate notifications that haven't been read
     console.log("[handle15MinTimer] Escalating unread notifications...");

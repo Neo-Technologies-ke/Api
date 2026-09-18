@@ -37,3 +37,5 @@ export { Room } from "./Room.js";
 export { Resource } from "./Resource.js";
 export { EventBooking } from "./EventBooking.js";
 export { CalendarBlockout } from "./CalendarBlockout.js";
+export { Appointment, AppointmentHistory, AppointmentLeader, AppointmentNotificationPreference, AvailabilityException, LeaderAvailability } from "./Appointment.js";
+export type { AppointmentStatus } from "./Appointment.js";

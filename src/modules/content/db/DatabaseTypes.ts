@@ -1,6 +1,7 @@
 import type {
-  Arrangement, ArrangementKey, BibleBook, BibleChapter, BibleLookup,
-  BibleTranslation, BibleVerse, BibleVerseText, Block, CalendarBlockout,
+  Appointment, AppointmentHistory, AppointmentLeader, AppointmentNotificationPreference,
+  Arrangement, ArrangementKey, AvailabilityException, BibleBook, BibleChapter, BibleLookup,
+  BibleTranslation, BibleVerse, BibleVerseText, Block, CalendarBlockout, LeaderAvailability,
   CuratedCalendar, CuratedEvent, Element, Event, EventBooking, EventException,
   File, GlobalStyle, Link, Page, PageHistory, Playlist, Registration,
   RegistrationMember, Resource, Room, Section, Sermon, Setting, Song,
@@ -8,6 +9,12 @@ import type {
 } from "../models/index.js";
 
 export interface ContentDatabase {
+  appointments: Appointment;
+  appointmentHistory: AppointmentHistory;
+  appointmentLeaders: AppointmentLeader;
+  appointmentNotificationPreferences: AppointmentNotificationPreference;
+  availabilityExceptions: AvailabilityException;
+  leaderAvailability: LeaderAvailability;
   arrangements: Arrangement;
   arrangementKeys: ArrangementKey;
   bibleBooks: BibleBook;

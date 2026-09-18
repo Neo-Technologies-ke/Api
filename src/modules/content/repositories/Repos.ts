@@ -31,7 +31,8 @@ import {
   RoomRepo,
   ResourceRepo,
   EventBookingRepo,
-  CalendarBlockoutRepo
+  CalendarBlockoutRepo,
+  AppointmentRepo
 } from "./index.js";
 
 export class Repos {
@@ -68,6 +69,7 @@ export class Repos {
   public resource: ResourceRepo;
   public eventBooking: EventBookingRepo;
   public calendarBlockout: CalendarBlockoutRepo;
+  public appointment: AppointmentRepo;
 
   public static getCurrent = () => new Repos();
 
@@ -105,5 +107,6 @@ export class Repos {
     this.resource = new ResourceRepo();
     this.eventBooking = new EventBookingRepo();
     this.calendarBlockout = new CalendarBlockoutRepo();
+    this.appointment = new AppointmentRepo();
   }
 }

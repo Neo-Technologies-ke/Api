@@ -38,5 +38,6 @@ export { RoomRepo } from "./RoomRepo.js";
 export { ResourceRepo } from "./ResourceRepo.js";
 export { EventBookingRepo } from "./EventBookingRepo.js";
 export { CalendarBlockoutRepo } from "./CalendarBlockoutRepo.js";
+export { AppointmentRepo } from "./AppointmentRepo.js";
 
 export { Repos } from "./Repos.js";

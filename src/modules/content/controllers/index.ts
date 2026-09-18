@@ -48,3 +48,4 @@ export { RoomController } from "./RoomController.js";
 export { ResourceController } from "./ResourceController.js";
 export { EventBookingController } from "./EventBookingController.js";
 export { CalendarBlockoutController } from "./CalendarBlockoutController.js";
+export { AppointmentController } from "./AppointmentController.js";
