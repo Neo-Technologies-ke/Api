@@ -506,7 +506,11 @@ export class DonateController extends GivingBaseController {
           }
         }
 
-        await this.sendEmails(donationData.person.email, donationData?.church, donationData.funds, donationData?.amount, donationData?.interval, donationData?.billing_cycle_anchor, "one-time");
+        try {
+          await this.sendEmails(donationData.person.email, donationData?.church, donationData.funds, donationData?.amount, donationData?.interval, donationData?.billing_cycle_anchor, "one-time");
+        } catch (emailError) {
+          console.error("Donation completed but receipt email failed:", emailError);
+        }
 
         return { ...chargeResult.data, provider: gateway.provider };
       } catch (error) {
