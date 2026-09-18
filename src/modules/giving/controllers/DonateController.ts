@@ -34,7 +34,8 @@ export class DonateController extends GivingBaseController {
         publicKey: gateway.publicKey,
         productId: gateway.productId,
         payFees: gateway.payFees,
-        currency: gateway.currency
+        currency: gateway.currency,
+        environment: gateway.environment
       }));
 
       return { gateways: publicGateways };
@@ -60,12 +61,15 @@ export class DonateController extends GivingBaseController {
       try {
         const reference = `mpesa-${churchId}-${Date.now()}-${crypto.randomBytes(5).toString("hex")}`;
         const secretKey = EncryptionHelper.decrypt(gateway.privateKey);
-        if (["staging", "test", "sandbox"].includes(String(gateway.environment || "").toLowerCase()) && !secretKey.startsWith("sk_test_")) return this.json({ error: "Staging M-PESA requires a Paystack test secret key" }, 400);
+        const testMode = ["staging", "test", "sandbox"].includes(String(gateway.environment || "").toLowerCase());
+        if (testMode && !secretKey.startsWith("sk_test_")) return this.json({ error: "Staging M-PESA requires a Paystack test secret key" }, 400);
+        const phone = PaystackHelper.normalizeKenyanPhone(body.phone);
+        if (testMode && phone !== "+254710000000") return this.json({ error: "Paystack test mode requires the official M-PESA test number +254710000000" }, 400);
         const result = await PaystackHelper.initiateMpesaCharge(secretKey, {
           email: body.person?.email || au.email,
           amount,
           currency,
-          phone: body.phone,
+          phone,
           reference,
           metadata: {
             churchId,
@@ -83,7 +87,12 @@ export class DonateController extends GivingBaseController {
           paybill: data.paybill
         };
       } catch (error: any) {
-        const message = error?.response?.data?.message || error?.response?.data?.data?.message || error?.message || "Unable to initiate M-PESA payment";
+        const response = error?.response?.data;
+        const data = response?.data || {};
+        if (data.reference && ["pending", "pay_offline", "success", "processing"].includes(data.status)) {
+          return { reference: data.reference, status: data.status, displayText: data.display_text || response?.message || "Check your phone to authorize the M-PESA payment", accountReference: data.account_reference, paybill: data.paybill };
+        }
+        const message = data?.message || data?.gateway_response || data?.display_text || response?.message || error?.message || "Unable to initiate M-PESA payment";
         return this.json({ error: message }, error?.response?.status >= 400 && error?.response?.status < 500 ? 400 : 502);
       }
     });
