@@ -60,6 +60,7 @@ export class DonateController extends GivingBaseController {
       try {
         const reference = `mpesa-${churchId}-${Date.now()}-${crypto.randomBytes(5).toString("hex")}`;
         const secretKey = EncryptionHelper.decrypt(gateway.privateKey);
+        if (["staging", "test", "sandbox"].includes(String(gateway.environment || "").toLowerCase()) && !secretKey.startsWith("sk_test_")) return this.json({ error: "Staging M-PESA requires a Paystack test secret key" }, 400);
         const result = await PaystackHelper.initiateMpesaCharge(secretKey, {
           email: body.person?.email || au.email,
           amount,
@@ -98,7 +99,9 @@ export class DonateController extends GivingBaseController {
       const gateway = await this.getGateway(churchId, "paystack", req.body.gatewayId);
       if (!gateway) return this.json({ error: "Paystack gateway not found" }, 404);
       try {
-        const verified = await PaystackHelper.verifyTransaction(EncryptionHelper.decrypt(gateway.privateKey), reference);
+        const secretKey = EncryptionHelper.decrypt(gateway.privateKey);
+        if (["staging", "test", "sandbox"].includes(String(gateway.environment || "").toLowerCase()) && !secretKey.startsWith("sk_test_")) return this.json({ error: "Staging M-PESA requires a Paystack test secret key" }, 400);
+        const verified = await PaystackHelper.verifyTransaction(secretKey, reference);
         const data = verified?.data || {};
         return { reference, status: data.status || "pending", gatewayResponse: data.gateway_response || "", channel: data.channel || "mobile_money" };
       } catch (error: any) {
