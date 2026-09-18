@@ -5,6 +5,31 @@ import { Donation, DonationBatch, EventLog, FundDonation } from "../../modules/g
 const PAYSTACK_API_BASE = "https://api.paystack.co";
 
 export class PaystackHelper {
+  static normalizeKenyanPhone(phone: string): string {
+    const compact = String(phone || "").replace(/[\s()-]/g, "");
+    if (/^\+254(1|7)\d{8}$/.test(compact)) return compact;
+    if (/^254(1|7)\d{8}$/.test(compact)) return `+${compact}`;
+    if (/^0(1|7)\d{8}$/.test(compact)) return `+254${compact.slice(1)}`;
+    throw new Error("Enter a valid Kenyan mobile number, for example 0710000000");
+  }
+
+  static async initiateMpesaCharge(secretKey: string, input: { email: string; amount: number; currency?: string; phone: string; reference: string; metadata?: Record<string, unknown> }): Promise<any> {
+    if (!secretKey) throw new Error("Paystack secret key is not configured. Please check your gateway settings.");
+    if (!input.email || !input.email.includes("@")) throw new Error("A valid email address is required");
+    if (!Number.isFinite(input.amount) || input.amount <= 0) throw new Error("A valid amount is required");
+    if (!/^[A-Za-z0-9.=-]+$/.test(input.reference)) throw new Error("Invalid Paystack reference");
+    const phone = this.normalizeKenyanPhone(input.phone);
+    const response = await Axios.post(`${PAYSTACK_API_BASE}/charge`, {
+      email: input.email,
+      amount: Math.round(input.amount * 100),
+      currency: (input.currency || "KES").toUpperCase(),
+      reference: input.reference,
+      mobile_money: { phone, provider: "mpesa" },
+      metadata: input.metadata || {}
+    }, { headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" } });
+    return response.data;
+  }
+
   /**
    * Verify a transaction reference server-to-server. This is the ONLY source of truth
    * for whether money actually moved — client-reported amounts/status are never trusted.
@@ -13,9 +38,7 @@ export class PaystackHelper {
     if (!secretKey) throw new Error("Paystack secret key is not configured. Please check your gateway settings.");
     if (!reference) throw new Error("Missing Paystack transaction reference.");
 
-    const response = await Axios.get(`${PAYSTACK_API_BASE}/transaction/verify/${encodeURIComponent(reference)}`, {
-      headers: { Authorization: `Bearer ${secretKey}` }
-    });
+    const response = await Axios.get(`${PAYSTACK_API_BASE}/transaction/verify/${encodeURIComponent(reference)}`, { headers: { Authorization: `Bearer ${secretKey}` } });
     return response.data;
   }
 

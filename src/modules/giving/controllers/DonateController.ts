@@ -10,6 +10,8 @@ import { Donation, FundDonation, DonationBatch, Subscription, SubscriptionFund }
 import { Environment } from "../../../shared/helpers/Environment.js";
 import Axios from "axios";
 import dayjs from "dayjs";
+import crypto from "crypto";
+import { PaystackHelper } from "../../../shared/helpers/PaystackHelper.js";
 
 @controller("/giving/donate")
 export class DonateController extends GivingBaseController {
@@ -36,6 +38,73 @@ export class DonateController extends GivingBaseController {
       }));
 
       return { gateways: publicGateways };
+    });
+  }
+
+  @httpPost("/mpesa/initiate")
+  public async initiateMpesa(req: express.Request<{}, {}, any>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (au) => {
+      const body = req.body || {};
+      const churchId = au.churchId || body.churchId;
+      if (!churchId || (au.churchId && au.churchId !== churchId)) return this.json({ error: "Invalid church" }, 403);
+      const amount = Number(body.amount);
+      const funds = Array.isArray(body.funds) ? body.funds.filter((fund: any) => fund?.id && Number(fund?.amount) > 0) : [];
+      const fundsTotal = funds.reduce((sum: number, fund: any) => sum + Number(fund.amount), 0);
+      if (!Number.isFinite(amount) || amount < 3 || amount > 1000000 || fundsTotal <= 0 || amount < fundsTotal || amount > fundsTotal * 1.1 + 100) return this.json({ error: "The donation amount and fund allocation are invalid" }, 400);
+      const existingFunds = await Promise.all(funds.map((fund: any) => this.repos.fund.load(churchId, fund.id)));
+      if (existingFunds.some((fund) => !fund)) return this.json({ error: "One or more donation funds are invalid" }, 400);
+      const gateway = await this.getGateway(churchId, "paystack", body.gatewayId);
+      if (!gateway) return this.json({ error: "Paystack gateway not found" }, 404);
+      const currency = String(body.currency || gateway.currency || "KES").toUpperCase();
+      if (currency !== "KES") return this.json({ error: "M-PESA donations must use KES" }, 400);
+      try {
+        const reference = `mpesa-${churchId}-${Date.now()}-${crypto.randomBytes(5).toString("hex")}`;
+        const secretKey = EncryptionHelper.decrypt(gateway.privateKey);
+        const result = await PaystackHelper.initiateMpesaCharge(secretKey, {
+          email: body.person?.email || au.email,
+          amount,
+          currency,
+          phone: body.phone,
+          reference,
+          metadata: {
+            churchId,
+            personId: au.personId || body.person?.id || "",
+            notes: String(body.notes || "").slice(0, 2000),
+            funds: JSON.stringify(funds)
+          }
+        });
+        const data = result?.data || {};
+        return {
+          reference: data.reference || reference,
+          status: data.status || "pending",
+          displayText: data.display_text || result?.message || "Check your phone to authorize the M-PESA payment",
+          accountReference: data.account_reference,
+          paybill: data.paybill
+        };
+      } catch (error: any) {
+        const message = error?.response?.data?.message || error?.response?.data?.data?.message || error?.message || "Unable to initiate M-PESA payment";
+        return this.json({ error: message }, error?.response?.status >= 400 && error?.response?.status < 500 ? 400 : 502);
+      }
+    });
+  }
+
+  @httpPost("/mpesa/status")
+  public async mpesaStatus(req: express.Request<{}, {}, { churchId?: string; gatewayId?: string; reference?: string }>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (au) => {
+      const churchId = au.churchId || req.body.churchId;
+      const reference = String(req.body.reference || "");
+      if (!churchId || (au.churchId && au.churchId !== churchId)) return this.json({ error: "Invalid church" }, 403);
+      if (!/^[A-Za-z0-9.=-]+$/.test(reference) || !reference.startsWith(`mpesa-${churchId}-`)) return this.json({ error: "Invalid payment reference" }, 400);
+      const gateway = await this.getGateway(churchId, "paystack", req.body.gatewayId);
+      if (!gateway) return this.json({ error: "Paystack gateway not found" }, 404);
+      try {
+        const verified = await PaystackHelper.verifyTransaction(EncryptionHelper.decrypt(gateway.privateKey), reference);
+        const data = verified?.data || {};
+        return { reference, status: data.status || "pending", gatewayResponse: data.gateway_response || "", channel: data.channel || "mobile_money" };
+      } catch (error: any) {
+        if (error?.response?.status === 404) return { reference, status: "pending", gatewayResponse: "Waiting for M-PESA authorization", channel: "mobile_money" };
+        return this.json({ error: error?.response?.data?.message || error?.message || "Unable to verify M-PESA payment" }, 502);
+      }
     });
   }
 
