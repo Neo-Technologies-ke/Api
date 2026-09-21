@@ -34,8 +34,9 @@ export class UserRepo {
       firstName: user.firstName,
       lastName: user.lastName,
       registrationDate: registrationDate as any,
-      lastLogin: lastLogin as any
-    }).where("id", "=", user.id).execute();
+      lastLogin: lastLogin as any,
+      mustChangePassword: user.mustChangePassword ? 1 : 0
+    } as any).where("id", "=", user.id).execute();
     return user;
   }
 

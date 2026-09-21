@@ -81,6 +81,19 @@ export class UserController extends MembershipBaseController {
           const failEmail = req.body.email || req.body.authGuid || "(jwt)";
           AuditLogHelper.logLogin(this.repos, "", "", false, ip, { email: failEmail, reason: "Invalid Credentials" });
           return this.denyAccess(["Login failed"]);
+        } else if (user.mustChangePassword) {
+          if (!user.authGuid) {
+            user.authGuid = v4();
+            await this.repos.user.save(user);
+          }
+          const ip = AuditLogHelper.getClientIp(req);
+          AuditLogHelper.logLogin(this.repos, "", user.id, true, ip, { email: user.email, reason: "Password change required" });
+          return this.json({
+            mustChangePassword: true,
+            authGuid: user.authGuid,
+            user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName },
+            userChurches: []
+          }, 200);
         } else {
           const userChurches = await this.getUserChurches(user.id);
 
@@ -319,6 +332,7 @@ export class UserController extends MembershipBaseController {
         const user = await this.repos.user.loadByAuthGuid(req.body.authGuid);
         if (user !== null) {
           user.authGuid = "";
+          user.mustChangePassword = false;
           const hashedPass = bcrypt.hashSync(req.body.newPassword, 10);
           user.password = hashedPass;
           await this.repos.user.save(user);
@@ -493,6 +507,33 @@ export class UserController extends MembershipBaseController {
     });
   }
 
+  @httpPost("/adminResetPassword", body("personId").exists().isString().withMessage("personId is required"))
+  public async adminResetPassword(req: express.Request<{}, {}, { personId: string }>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (au) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+      if (!au.checkAccess(Permissions.roles.edit)) return this.json({ errors: ["Access denied"] }, 401);
+
+      const userChurch = await this.repos.userChurch.loadByPersonId(req.body.personId, au.churchId);
+      if (!userChurch?.userId) return this.json({ errors: ["This person does not have a login account."] }, 400);
+
+      const user = await this.repos.user.load(userChurch.userId);
+      if (!user) return this.json({ errors: ["This person does not have a login account."] }, 400);
+
+      const tempPassword = crypto.randomBytes(6).toString("base64url");
+      user.password = bcrypt.hashSync(tempPassword, 10);
+      user.mustChangePassword = true;
+      user.authGuid = "";
+      await this.repos.user.save(user);
+      await this.repos.user.clearVerification(user.id);
+
+      const ip = AuditLogHelper.getClientIp(req);
+      AuditLogHelper.log(this.repos, au.churchId, au.id, "security", "password_reset_admin", "user", user.id, { email: user.email }, ip);
+
+      return this.json({ success: true, tempPassword, email: user.email }, 200);
+    });
+  }
+
   @httpPost("/updatePassword", body("newPassword").isLength({ min: 6 }).withMessage("must be at least 6 chars long"))
   public async updatePassword(req: express.Request<{}, {}, { newPassword: string }>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
@@ -505,6 +546,7 @@ export class UserController extends MembershipBaseController {
       if (user !== null) {
         const hashedPass = bcrypt.hashSync(req.body.newPassword, 10);
         user.password = hashedPass;
+        user.mustChangePassword = false;
         user = await this.repos.user.save(user);
         const ip = AuditLogHelper.getClientIp(req);
         AuditLogHelper.log(this.repos, au.churchId, au.id, "security", "password_changed", "user", au.id, { email: user.email, method: "updatePassword" }, ip);

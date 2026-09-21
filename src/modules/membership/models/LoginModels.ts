@@ -14,6 +14,8 @@ export interface LoginResponse {
   userChurches: LoginUserChurch[];
   token?: string;
   errors?: string[];
+  mustChangePassword?: boolean;
+  authGuid?: string;
 }
 
 export interface LoginUserChurch {

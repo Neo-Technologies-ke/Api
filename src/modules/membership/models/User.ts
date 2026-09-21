@@ -11,4 +11,5 @@ export class User {
   public verificationCode?: string;
   public verificationExpires?: Date;
   public verificationAttempts?: number;
+  public mustChangePassword?: boolean;
 }
