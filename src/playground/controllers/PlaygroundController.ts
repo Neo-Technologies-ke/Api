@@ -721,8 +721,8 @@ export class PlaygroundController extends GivingBaseController {
     try {
       const { to, subject, message } = req.body;
       const from = "noreply@lifereformationcentre.org";
-      const emailSubject = subject || "Test Email from B1Api";
-      const emailMessage = message || "This is a test email from the B1Api playground.";
+      const emailSubject = subject || "Test Email from LRC";
+      const emailMessage = message || "This is a test email from the LRC playground.";
       const htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h2 style="color: #2c3e50;">Test Email</h2>
