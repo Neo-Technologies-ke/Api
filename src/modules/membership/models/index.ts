@@ -2,6 +2,7 @@ export { Group } from "./Group.js";
 export { GroupJoinRequest } from "./GroupJoinRequest.js";
 export { GroupMember } from "./GroupMember.js";
 export { GroupReport } from "./GroupReport.js";
+export { GroupReportTemplate } from "./GroupReportTemplate.js";
 export { Household } from "./Household.js";
 export { MemberPermission } from "./MemberPermission.js";
 export { ContactInfo } from "./ContactInfo.js";

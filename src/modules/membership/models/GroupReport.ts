@@ -10,8 +10,16 @@ export class GroupReport {
   public content?: string;
   public reportDate?: Date | string;
   public status?: string;
+  public templateId?: string;
   public createdAt?: Date;
+  public updatedAt?: Date;
+  public submittedAt?: Date | null;
+  public readAt?: Date | null;
+  public response?: string;
+  public respondedAt?: Date;
+  public respondedByPersonId?: string;
 
   public person?: Person;
+  public respondedByPerson?: Person;
   public group?: Group;
 }
