@@ -19,4 +19,10 @@ export class Task {
   public automationId?: string;
   public conversationId?: string;
   public data?: string;
+  public workflowId?: string;
+  public stepId?: string;
+  public dueDate?: Date;
+  public snoozedUntil?: Date;
+  public sort?: number;
+  public pinnedAssignment?: boolean;
 }

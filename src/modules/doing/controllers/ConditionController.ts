@@ -19,6 +19,20 @@ export class ConditionController extends DoingBaseController {
     });
   }
 
+  @httpGet("/stepRoute/:id")
+  public async getForStepRoute(@requestParam("id") stepRouteId: string, req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (au) => {
+      return await this.repos.condition.loadForAutomation(au.churchId, stepRouteId);
+    });
+  }
+
+  @httpGet("/trigger/:id")
+  public async getForTrigger(@requestParam("id") triggerId: string, req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (au) => {
+      return await this.repos.condition.loadForAutomation(au.churchId, triggerId);
+    });
+  }
+
   @httpPost("/")
   public async save(req: express.Request<{}, {}, Condition[]>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {

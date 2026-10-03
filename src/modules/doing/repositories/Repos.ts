@@ -12,7 +12,8 @@ import {
   PositionRepo,
   TaskRepo,
   TimeRepo,
-  MembershipRepo
+  MembershipRepo,
+  WorkflowRepo
 } from "./index.js";
 
 export class Repos {
@@ -30,6 +31,7 @@ export class Repos {
   public task: TaskRepo;
   public time: TimeRepo;
   public membership: MembershipRepo;
+  public workflow: WorkflowRepo;
 
   private static _current: Repos = null;
   public static getCurrent = () => {
@@ -52,5 +54,6 @@ export class Repos {
     this.task = new TaskRepo();
     this.time = new TimeRepo();
     this.membership = new MembershipRepo();
+    this.workflow = new WorkflowRepo();
   }
 }

@@ -19,6 +19,25 @@ export class ConjunctionController extends DoingBaseController {
     });
   }
 
+  @httpGet("/stepRoute/:id")
+  public async getForStepRoute(@requestParam("id") stepRouteId: string, req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (au) => {
+      let conjunctions: any[] = await this.repos.conjunction.loadForAutomation(au.churchId, stepRouteId);
+      if (conjunctions.length === 0) {
+        const root = await this.repos.conjunction.save({ churchId: au.churchId, automationId: stepRouteId, groupType: "and" } as Conjunction);
+        conjunctions = [root];
+      }
+      return conjunctions;
+    });
+  }
+
+  @httpGet("/trigger/:id")
+  public async getForTrigger(@requestParam("id") triggerId: string, req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (au) => {
+      return await this.repos.conjunction.loadForAutomation(au.churchId, triggerId);
+    });
+  }
+
   @httpPost("/")
   public async save(req: express.Request<{}, {}, Conjunction[]>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {

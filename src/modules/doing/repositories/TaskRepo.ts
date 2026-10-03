@@ -41,7 +41,13 @@ export class TaskRepo {
       status: task.status,
       automationId: task.automationId,
       conversationId: task.conversationId,
-      data: task.data
+      data: task.data,
+      workflowId: task.workflowId,
+      stepId: task.stepId,
+      dueDate: toDbDate(task.dueDate) as any,
+      snoozedUntil: toDbDate(task.snoozedUntil) as any,
+      sort: task.sort,
+      pinnedAssignment: task.pinnedAssignment
     }).execute();
     return task;
   }
@@ -63,7 +69,13 @@ export class TaskRepo {
       status: task.status,
       automationId: task.automationId,
       conversationId: task.conversationId,
-      data: task.data
+      data: task.data,
+      workflowId: task.workflowId,
+      stepId: task.stepId,
+      dueDate: toDbDate(task.dueDate) as any,
+      snoozedUntil: toDbDate(task.snoozedUntil) as any,
+      sort: task.sort,
+      pinnedAssignment: task.pinnedAssignment
     }).where("id", "=", task.id).where("churchId", "=", task.churchId).execute();
     return task;
   }

@@ -43,6 +43,9 @@ export class Permissions extends BasePermissions {
 
   static registrations = { view: { contentType: "Registrations", action: "View" }, edit: { contentType: "Registrations", action: "Edit" } };
 
+  // Doing API permissions
+  static tasks = { view: { contentType: "Tasks", action: "View" }, edit: { contentType: "Tasks", action: "Edit" }, admin: { contentType: "Tasks", action: "Admin" } };
+
   // Messaging API permissions (to be defined during migration)
   static messaging = { view: { contentType: "Messaging", action: "View" }, edit: { contentType: "Messaging", action: "Edit" }, admin: { contentType: "Messaging", action: "Admin" } };
 
@@ -101,6 +104,11 @@ export const permissionsList: IPermission[] = [
   { apiName: "ContentApi", section: "Appointments", action: "Admin", displaySection: "Content", displayAction: "Administer Appointments" },
   { apiName: "ContentApi", section: "Appointments", action: "Edit", displaySection: "Content", displayAction: "Manage Appointments" },
 
+  // Doing API permissions
+  { apiName: "DoingApi", section: "Tasks", action: "View", displaySection: "Serving", displayAction: "View Workflows" },
+  { apiName: "DoingApi", section: "Tasks", action: "Edit", displaySection: "Serving", displayAction: "Edit Workflow Cards" },
+  { apiName: "DoingApi", section: "Tasks", action: "Admin", displaySection: "Serving", displayAction: "Manage Workflows" },
+
   // Messaging API permissions
   { apiName: "MessagingApi", section: "Texting", action: "Send", displaySection: "Messaging", displayAction: "Send Text Messages" },
 
@@ -119,7 +127,7 @@ export interface IPermission {
 
 export type ApiName = "MembershipApi" | "GivingApi" | "AttendanceApi" | "MessagingApi" | "DoingApi" | "ContentApi" | "LessonsApi";
 
-export type DisplaySection = "People and Groups" | "Donations" | "Attendance" | "Forms and Plans" | "Content" | "Messaging" | "Lessons";
+export type DisplaySection = "People and Groups" | "Donations" | "Attendance" | "Forms and Plans" | "Content" | "Messaging" | "Lessons" | "Serving";
 
 export type ContentType =
   | "Roles"
@@ -147,6 +155,7 @@ export type ContentType =
   | "Texting"
   | "Registrations"
   | "Appointments"
-  | "Schedules";
+  | "Schedules"
+  | "Tasks";
 
 export type Actions = "Admin" | "Edit" | "View" | "Send" | "Edit Self" | "View Members" | "View Summary" | "Checkin" | "Host" | "Edit Settings";

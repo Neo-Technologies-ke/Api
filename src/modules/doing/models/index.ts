@@ -11,3 +11,4 @@ export { PlanType } from "./PlanType.js";
 export { Position } from "./Position.js";
 export { Task } from "./Task.js";
 export { Time } from "./Time.js";
+export { Workflow, WorkflowCategory, WorkflowStep, WorkflowStepRoute, WorkflowStepAction, WorkflowTrigger, WorkflowTriggerExecution } from "./Workflow.js";
