@@ -331,8 +331,7 @@ export class TaskController extends DoingBaseController {
           // URL still remains in the task data as a record of the change.
           try {
             const photoUpdated = new Date();
-            const photo = `/${churchId}/membership/people/${task.associatedWithId}.png?dt=${photoUpdated.getTime()}`;
-            await this.repos.membership.updatePersonPhoto(churchId, task.associatedWithId, photo, photoUpdated);
+            await this.repos.membership.updatePersonPhoto(churchId, task.associatedWithId, photoUpdated);
           } catch (e) {
             console.error("Failed to apply photo immediately:", e);
           }

@@ -81,9 +81,9 @@ export class MembershipRepo {
     return result;
   }
 
-  public async updatePersonPhoto(churchId: string, personId: string, photo: string, photoUpdated: Date) {
+  public async updatePersonPhoto(churchId: string, personId: string, photoUpdated: Date) {
     await (this.getDb() as any).updateTable("people")
-      .set({ photo, photoUpdated })
+      .set({ photoUpdated })
       .where("churchId", "=", churchId)
       .where("id", "=", personId)
       .execute();
