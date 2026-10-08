@@ -59,6 +59,44 @@ export class EventController extends ContentBaseController {
     });
   }
 
+  @httpGet("/holidays")
+  public async getHolidays(req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
+    return this.actionWrapperAnon(req, res, async () => {
+      const start = new Date(req.query.start?.toString() || "");
+      const end = new Date(req.query.end?.toString() || "");
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) return [];
+      const pad = (n: number) => n.toString().padStart(2, "0");
+      const key = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      const easter = (y: number) => {
+        const a = y % 19, b = Math.floor(y / 100), c = y % 100;
+        const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+        const h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4;
+        const l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+        const month = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
+        return new Date(y, month - 1, day);
+      };
+      const holidays: { date: string; name: string }[] = [];
+      for (let y = start.getFullYear(); y <= end.getFullYear(); y++) {
+        const entries: [number, number, string][] = [
+          [0, 1, "New Year's Day"],
+          [4, 1, "Labour Day"],
+          [5, 1, "Madaraka Day"],
+          [9, 10, "Huduma Day"],
+          [9, 20, "Mashujaa Day"],
+          [11, 12, "Jamhuri Day"],
+          [11, 25, "Christmas Day"],
+          [11, 26, "Boxing Day"]
+        ];
+        const e = easter(y);
+        const goodFriday = new Date(e); goodFriday.setDate(e.getDate() - 2);
+        const easterMonday = new Date(e); easterMonday.setDate(e.getDate() + 1);
+        const all = [...entries.map(([m, d, n]) => ({ date: new Date(y, m, d), name: n })), { date: goodFriday, name: "Good Friday" }, { date: easterMonday, name: "Easter Monday" }];
+        all.forEach((h) => { if (h.date >= start && h.date <= end) holidays.push({ date: key(h.date), name: h.name }); });
+      }
+      return holidays;
+    });
+  }
+
   @httpGet("/group/:groupId")
   public async getForGroup(@requestParam("groupId") groupId: string, req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
