@@ -325,7 +325,17 @@ export class TaskController extends DoingBaseController {
         : [];
       for (const d of data) {
         if (d.field === "photo" && d.value !== undefined) {
-          d.value = await this.savePhoto(churchId, d.value, task);
+          const photoUrl = await this.savePhoto(churchId, d.value, task);
+          d.value = photoUrl;
+          // Photos apply immediately on submit — no approval gate. The stored
+          // URL still remains in the task data as a record of the change.
+          try {
+            const photoUpdated = new Date();
+            const photo = `/${churchId}/membership/people/${task.associatedWithId}.png?dt=${photoUpdated.getTime()}`;
+            await this.repos.membership.updatePersonPhoto(churchId, task.associatedWithId, photo, photoUpdated);
+          } catch (e) {
+            console.error("Failed to apply photo immediately:", e);
+          }
         }
       }
       task.data = JSON.stringify(data);

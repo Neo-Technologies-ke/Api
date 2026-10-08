@@ -81,6 +81,14 @@ export class MembershipRepo {
     return result;
   }
 
+  public async updatePersonPhoto(churchId: string, personId: string, photo: string, photoUpdated: Date) {
+    await (this.getDb() as any).updateTable("people")
+      .set({ photo, photoUpdated })
+      .where("churchId", "=", churchId)
+      .where("id", "=", personId)
+      .execute();
+  }
+
   public async loadPeople(churchId: string, personIds: string[]) {
     if (personIds.length === 0) return [];
     return (this.getDb() as any).selectFrom("people")

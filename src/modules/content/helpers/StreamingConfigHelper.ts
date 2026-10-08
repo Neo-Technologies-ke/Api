@@ -28,6 +28,8 @@ export class StreamingConfigHelper {
         provider: s.provider,
         providerKey: s.providerKey,
         id: s.id,
+        label: s.label,
+        recurring: !!s.recurring,
         sermon: this.getSermon(s.sermonId, sermons)
       });
     });
