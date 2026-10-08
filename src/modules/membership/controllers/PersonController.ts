@@ -492,7 +492,7 @@ export class PersonController extends MembershipBaseController {
             this.repos.person.save(person).then(async (p) => {
               // const r = this.repos.person.convertToModel(au.churchId, p);
               p.churchId = au.churchId;
-              if (p.photo !== undefined && p.photo.startsWith("data:image/png;base64,")) await this.savePhoto(au.churchId, p);
+              if (p.photo !== undefined && p.photo.startsWith("data:image/")) await this.savePhoto(au.churchId, p);
               // Create userChurch record if email matches a user and person is in groups
               if (p.email) await UserChurchHelper.createForPersonEmailUpdate(au.churchId, p.id, p.email);
               return p;
@@ -596,9 +596,11 @@ export class PersonController extends MembershipBaseController {
   }
 
   private async savePhoto(churchId: string, person: Person) {
+    const mimeMatch = /^data:(image\/[a-zA-Z0-9.+-]+);base64,/.exec(person.photo);
+    if (!mimeMatch) return;
     const base64 = person.photo.split(",")[1];
     const key = "/" + churchId + "/membership/people/" + person.id + ".png";
-    return FileStorageHelper.store(key, "image/png", Buffer.from(base64, "base64")).then(async () => {
+    return FileStorageHelper.store(key, mimeMatch[1], Buffer.from(base64, "base64")).then(async () => {
       person.photoUpdated = new Date();
       person.photo = key + "?dt=" + person.photoUpdated.getTime().toString();
       await this.repos.person.save(person);
