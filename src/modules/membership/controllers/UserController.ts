@@ -588,14 +588,13 @@ export class UserController extends MembershipBaseController {
         subDomain = church?.subDomain;
       }
 
-      const subDomainPrefix = subDomain ? `/${subDomain}` : "";
-      let loginLink = subDomainPrefix || "/";
+      let loginLink = "/mobile/login";
       let isExistingUser = false;
       const user = await this.repos.user.loadByEmail(email);
       if (user) {
         isExistingUser = true;
         user.authGuid = v4();
-        loginLink = `${subDomainPrefix}/login?auth=${user.authGuid}`;
+        loginLink = `/mobile/login?auth=${user.authGuid}`;
         await Promise.all([
           this.repos.user.save(user),
           UserHelper.sendInviteEmail(email, personName || "", contextName, churchName || "", loginLink, isExistingUser, subDomain)

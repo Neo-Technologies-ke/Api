@@ -71,8 +71,7 @@ export class UserHelper {
 
   static sendInviteEmail(email: string, personName: string, contextName: string, churchName: string, loginLink: string, isExistingUser: boolean, subDomain?: string): Promise<any> {
     const appName = churchName || "Life Reformation Centre";
-    const portalRoot = "https://portal.lifereformationcentre.org";
-    const appUrl = subDomain ? `${portalRoot}/${subDomain}` : portalRoot;
+    const appUrl = "https://portal.lifereformationcentre.org";
     const actionLabel = isExistingUser ? "Log In" : "Sign Up";
     const subject = "You've been added to " + contextName;
     const contents =
