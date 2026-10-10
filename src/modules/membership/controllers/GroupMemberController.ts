@@ -76,10 +76,28 @@ export class GroupMemberController extends MembershipBaseController {
       // Create userChurch records for members with matching users
       for (const gm of result) {
         await UserChurchHelper.createForGroupMember(au.churchId, gm.personId);
+        if (gm.leader && gm.leaderTitle) await this.assignRoleForLeaderTitle(au, gm);
       }
 
       return this.repos.groupMember.convertAllToModel(au.churchId, result);
     });
+  }
+
+  // When a leader is promoted with a typed title (e.g. "Village Coordinator",
+  // "PG ICT Coordinator"), grant them the matching role so the scoped admin
+  // permissions apply without a separate role-assignment step.
+  private async assignRoleForLeaderTitle(au: any, gm: GroupMember) {
+    try {
+      const norm = (s: string) => (s || "").toLowerCase().replace(/s\b/g, "").replace(/\s+/g, " ").trim();
+      const roles: any[] = await this.repos.role.loadByChurchId(au.churchId);
+      const role = (roles || []).find((r) => norm(r.name) === norm(gm.leaderTitle));
+      if (!role) return;
+      const person: any = await this.repos.person.load(au.churchId, gm.personId);
+      if (!person?.userId) return;
+      const existing = await this.repos.roleMember.loadByRoleId(role.id, au.churchId);
+      if (existing.some((m: any) => m.userId === person.userId)) return;
+      await this.repos.roleMember.save({ churchId: au.churchId, roleId: role.id, userId: person.userId, addedBy: au.id } as any);
+    } catch { /* role assignment is best-effort; membership save already succeeded */ }
   }
 
   @httpDelete("/:id")

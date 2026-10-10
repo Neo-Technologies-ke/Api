@@ -19,6 +19,7 @@ export class GroupMemberRepo {
       groupId: model.groupId,
       personId: model.personId,
       leader: model.leader,
+      leaderTitle: model.leaderTitle,
       joinDate: sql`NOW()` as any
     }).execute();
     return model;
@@ -28,7 +29,8 @@ export class GroupMemberRepo {
     await getDb().updateTable("groupMembers").set({
       groupId: model.groupId,
       personId: model.personId,
-      leader: model.leader
+      leader: model.leader,
+      leaderTitle: model.leader ? model.leaderTitle || null : null
     }).where("id", "=", model.id).where("churchId", "=", model.churchId).execute();
     return model;
   }
@@ -84,7 +86,7 @@ export class GroupMemberRepo {
       if (!rolesByPerson.has(r.personId)) rolesByPerson.set(r.personId, []);
       rolesByPerson.get(r.personId).push(r.roleName);
     });
-    rows.forEach((r) => { if (r.leader) r.leaderTitle = this.leaderTitle(group?.categoryName, rolesByPerson.get(r.personId)); });
+    rows.forEach((r) => { if (r.leader) r.leaderTitle = r.leaderTitle || this.leaderTitle(group?.categoryName, rolesByPerson.get(r.personId)); });
     return rows;
   }
 
