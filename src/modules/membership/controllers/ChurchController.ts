@@ -400,7 +400,7 @@ export class ChurchController extends MembershipBaseController {
       return;
     }
     const p = (await this.repos.person.load(uc.churchId, uc.personId)) as any;
-    const groups: Group[] = (await this.repos.group.loadAllForPerson(uc.personId)) as Group[];
+    const memberships = (await this.repos.groupMember.loadForPerson(uc.churchId, uc.personId)) as any[];
     userChurch.person = {
       id: p.id,
       membershipStatus: p.membershipStatus,
@@ -410,7 +410,7 @@ export class ChurchController extends MembershipBaseController {
       }
     };
     userChurch.groups = [];
-    groups.forEach((g) => userChurch.groups.push({ id: g.id, tags: g.tags, name: g.name, leader: false }));
+    memberships.forEach((gm) => userChurch.groups.push({ id: gm.groupId, tags: gm.tags, name: gm.groupName, leader: !!gm.leader }));
   }
 
   private async fetchChurchPermissions(au: AuthenticatedUser, churchId: string): Promise<LoginUserChurch> {

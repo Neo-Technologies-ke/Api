@@ -138,7 +138,7 @@ export class GroupMemberRepo {
     return getDb().selectFrom("groupMembers as gm")
       .innerJoin("groups as g", "g.id", "gm.groupId")
       .selectAll("gm")
-      .select("g.name as groupName")
+      .select(["g.name as groupName", "g.tags"])
       .where("gm.churchId", "=", churchId)
       .where("gm.personId", "=", personId)
       .where("g.removed", "=", 0 as any)
