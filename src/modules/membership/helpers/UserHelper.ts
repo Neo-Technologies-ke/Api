@@ -57,9 +57,15 @@ export class UserHelper {
     });
   }
 
+  private static portalRoot(): string {
+    return Environment.appEnv === "staging"
+      ? "https://staging-portal.lifereformationcentre.org"
+      : "https://portal.lifereformationcentre.org";
+  }
+
   static sendWelcomeEmail(email: string, code: string, appName: string, appUrl: string): Promise<any> {
     const displayAppName = "LRC";
-    if (!appUrl) appUrl = "https://portal.lifereformationcentre.org";
+    if (!appUrl) appUrl = this.portalRoot();
 
     const contents =
       "<h2>Welcome To " + displayAppName + "</h2>" +
@@ -71,7 +77,7 @@ export class UserHelper {
 
   static sendInviteEmail(email: string, personName: string, contextName: string, churchName: string, loginLink: string, isExistingUser: boolean, subDomain?: string): Promise<any> {
     const appName = churchName || "Life Reformation Centre";
-    const appUrl = "https://portal.lifereformationcentre.org";
+    const appUrl = this.portalRoot();
     const actionLabel = isExistingUser ? "Log In" : "Sign Up";
     const subject = "You've been added to " + contextName;
     const contents =
@@ -84,7 +90,7 @@ export class UserHelper {
 
   static sendForgotEmail(email: string, code: string, appName: string, appUrl: string): Promise<any> {
     const displayAppName = "LRC";
-    if (!appUrl) appUrl = "https://portal.lifereformationcentre.org";
+    if (!appUrl) appUrl = this.portalRoot();
 
     const contents =
       "<h2>Reset Password</h2>" +
