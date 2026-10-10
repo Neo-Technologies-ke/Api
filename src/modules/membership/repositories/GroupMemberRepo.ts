@@ -45,8 +45,51 @@ export class GroupMemberRepo {
     return getDb().selectFrom("groupMembers").selectAll().where("churchId", "=", churchId).execute();
   }
 
+  // Resolve a descriptive leader title (e.g. "Village Leader", "PG ICT Coordinator") from the
+  // group's category plus any matching role membership of the person.
+  private leaderTitle(categoryName: string | undefined, roleNames: string[] | undefined): string {
+    const cat = (categoryName || "").toLowerCase();
+    const findRole = (kw: string) => roleNames?.find((n) => n.toLowerCase().includes(kw));
+    if (cat === "village") {
+      const role = findRole("village");
+      if (role) return role.replace(/s$/, ""); // "Village Coordinators" -> "Village Coordinator"
+      return "Village Leader";
+    }
+    if (cat === "people group") {
+      const pgRole = findRole("pg ") || findRole("people group");
+      if (pgRole) return pgRole.replace(/s$/, "");
+      return "PG Leader";
+    }
+    if (cat === "ministry") return "Ministry Leader";
+    if (cat === "team") return "Team Leader";
+    if (categoryName) return `${categoryName} Leader`;
+    return "Leader";
+  }
+
+  private async attachLeaderTitles(churchId: string, groupId: string, rows: any[]): Promise<any[]> {
+    const leaders = rows.filter((r) => r.leader);
+    if (!leaders.length) return rows;
+    const group: any = await getDb().selectFrom("groups" as any).select("categoryName").where("id", "=", groupId).executeTakeFirst();
+    const personIds = leaders.map((r) => r.personId);
+    const roleResult = await sql<any>`
+      SELECT p.id AS personId, r.name AS roleName
+      FROM roleMembers rm
+      INNER JOIN people p ON p.userId = rm.userId
+      INNER JOIN roles r ON r.id = rm.roleId
+      WHERE rm.churchId = ${churchId} AND p.id IN (${sql.join(personIds)})
+    `.execute(getDb() as any);
+    const roleRows = roleResult.rows || [];
+    const rolesByPerson = new Map<string, string[]>();
+    roleRows.forEach((r: any) => {
+      if (!rolesByPerson.has(r.personId)) rolesByPerson.set(r.personId, []);
+      rolesByPerson.get(r.personId).push(r.roleName);
+    });
+    rows.forEach((r) => { if (r.leader) r.leaderTitle = this.leaderTitle(group?.categoryName, rolesByPerson.get(r.personId)); });
+    return rows;
+  }
+
   public async loadForGroup(churchId: string, groupId: string) {
-    return getDb().selectFrom("groupMembers as gm")
+    const rows = await getDb().selectFrom("groupMembers as gm")
       .innerJoin("people as p", (join) => join.onRef("p.id", "=", "gm.personId").on((eb) => eb.or([eb("p.removed", "=", 0 as any), eb("p.removed", "is", null)])))
       .selectAll("gm")
       .select([
@@ -58,10 +101,11 @@ export class GroupMemberRepo {
       .orderBy("p.lastName")
       .orderBy("p.firstName")
       .execute();
+    return this.attachLeaderTitles(churchId, groupId, rows);
   }
 
   public async loadLeadersForGroup(churchId: string, groupId: string) {
-    return getDb().selectFrom("groupMembers as gm")
+    const rows = await getDb().selectFrom("groupMembers as gm")
       .innerJoin("people as p", (join) => join.onRef("p.id", "=", "gm.personId").on((eb) => eb.or([eb("p.removed", "=", 0 as any), eb("p.removed", "is", null)])))
       .selectAll("gm")
       .select(["p.photoUpdated", "p.displayName"])
@@ -71,6 +115,7 @@ export class GroupMemberRepo {
       .orderBy("p.lastName")
       .orderBy("p.firstName")
       .execute();
+    return this.attachLeaderTitles(churchId, groupId, rows);
   }
 
   public async loadForGroups(churchId: string, groupIds: string[]) {
@@ -126,7 +171,8 @@ export class GroupMemberRepo {
       groupId: row.groupId,
       personId: row.personId,
       joinDate: row.joinDate,
-      leader: row.leader
+      leader: row.leader,
+      leaderTitle: row.leaderTitle
     };
     if (row.displayName !== undefined) {
       result.person = {

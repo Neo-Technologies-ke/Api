@@ -33,6 +33,9 @@ export class PersonRepo {
 
     // Map name fields to flat structure
     (person as any).displayName = person.name?.display;
+    // Always derive the display name as "first middle last" so members without a last name still show first + middle
+    const nameParts = [person.name?.first, person.name?.middle, person.name?.last].map((s) => s?.trim()).filter(Boolean);
+    if (nameParts.length) (person as any).displayName = nameParts.join(" ");
     (person as any).firstName = person.name?.first;
     (person as any).middleName = person.name?.middle;
     (person as any).lastName = person.name?.last;

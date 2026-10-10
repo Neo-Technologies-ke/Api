@@ -7,6 +7,7 @@ export class GroupMember {
   public personId?: string;
   public joinDate?: Date;
   public leader?: boolean;
+  public leaderTitle?: string;
   public person?: Person;
   public group?: Group;
 }
