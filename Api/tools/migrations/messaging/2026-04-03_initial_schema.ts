@@ -46,7 +46,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("lastPostId", sql`char(11)`)
     .addColumn("postCount", sql`int`)
     .addColumn("allowAnonymousPosts", sql`bit(1)`)
-    .modifyEnd(sql`ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`)
+    .modifyEnd(sql`ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci`)
     .execute();
 
   await db.schema.createIndex("idx_conversations_churchId_contentType_contentId").on("conversations").columns(["churchId", "contentType", "contentId"]).execute();
@@ -121,7 +121,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("category", sql`varchar(100)`)
     .addColumn("dateCreated", sql`datetime`, (col) => col.defaultTo(sql`CURRENT_TIMESTAMP`))
     .addColumn("dateModified", sql`datetime`, (col) => col.defaultTo(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`))
-    .modifyEnd(sql`ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`)
+    .modifyEnd(sql`ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci`)
     .execute();
 
   await db.schema.createIndex("idx_emailTemplates_churchId").on("emailTemplates").columns(["churchId"]).execute();
@@ -139,7 +139,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("content", sql`text`)
     .addColumn("personId", sql`char(11)`)
     .addColumn("timeUpdated", sql`datetime`)
-    .modifyEnd(sql`ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`)
+    .modifyEnd(sql`ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci`)
     .execute();
 
   await db.schema.createIndex("idx_messages_churchId_conversationId").on("messages").columns(["churchId", "conversationId"]).execute();
@@ -190,7 +190,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("conversationId", sql`char(11)`)
     .addColumn("notifyPersonId", sql`char(11)`)
     .addColumn("deliveryMethod", sql`varchar(10)`)
-    .modifyEnd(sql`ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`)
+    .modifyEnd(sql`ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci`)
     .execute();
 
   await db.schema.createIndex("idx_privateMessages_churchId_fromPersonId").on("privateMessages").columns(["churchId", "fromPersonId"]).execute();

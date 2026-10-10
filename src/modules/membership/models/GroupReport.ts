@@ -8,6 +8,7 @@ export class GroupReport {
   public personId?: string;
   public title?: string;
   public content?: string;
+  public answers?: Record<string, any>;
   public reportDate?: Date | string;
   public status?: string;
   public templateId?: string;

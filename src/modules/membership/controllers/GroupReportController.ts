@@ -34,7 +34,7 @@ export class GroupReportController extends MembershipBaseController {
     return this.actionWrapper(req, res, async (au) => {
       if (!au.checkAccess(Permissions.groupReports.edit)) return this.json({ error: "Access denied" }, 401);
       const template = req.body;
-      if (!template.name?.trim() || !template.content?.trim()) return this.json({ error: "Name and template content are required" }, 400);
+      if (!template.name?.trim() || (!template.content?.trim() && !template.questions?.length)) return this.json({ error: "Name and template content are required" }, 400);
       if (template.id && !(await this.repos.groupReport.loadTemplate(au.churchId, template.id))) return this.json({ error: "Not found" }, 404);
       template.churchId = au.churchId;
       return this.repos.groupReport.saveTemplate(template);
@@ -100,7 +100,16 @@ export class GroupReportController extends MembershipBaseController {
         if (!report.reportDate) report.reportDate = new Date().toISOString().split("T")[0];
         if (!report.groupId || (!canEditAll && !au.leaderGroupIds?.includes(report.groupId))) return this.json({ error: "Access denied" }, 401);
       }
-      if (!report.title?.trim() || !report.content?.trim()) return this.json({ error: "Title and report content are required" }, 400);
+      if (!report.title?.trim() || (!report.content?.trim() && !report.answers)) return this.json({ error: "Title and report content are required" }, 400);
+      if (report.templateId) {
+        const template = await this.repos.groupReport.loadTemplate(au.churchId, report.templateId);
+        const groupQuestions = (template?.questions || []).filter((q: any) => q.type === "group");
+        if (groupQuestions.length) {
+          const group = await this.repos.group.load(au.churchId, report.groupId);
+          report.answers = report.answers || {};
+          groupQuestions.forEach((q: any) => { report.answers[q.id] = group?.name || ""; });
+        }
+      }
       return this.repos.groupReport.save(report);
     });
   }

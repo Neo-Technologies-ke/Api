@@ -15,6 +15,7 @@ export class GroupReportRepo {
     await getDb().insertInto("groupReports" as any).values({
       id: report.id, churchId: report.churchId, groupId: report.groupId, personId: report.personId,
       templateId: report.templateId || null, title: report.title, content: report.content,
+      answers: report.answers ? JSON.stringify(report.answers) : null,
       reportDate: report.reportDate, status: report.status || "draft", submittedAt
     }).execute();
     report.submittedAt = submittedAt;
@@ -24,6 +25,7 @@ export class GroupReportRepo {
   private async update(report: GroupReport): Promise<GroupReport> {
     await getDb().updateTable("groupReports" as any).set({
       templateId: report.templateId || null, title: report.title, content: report.content,
+      answers: report.answers ? JSON.stringify(report.answers) : null,
       reportDate: report.reportDate, status: report.status, submittedAt: report.submittedAt,
       updatedAt: new Date()
     }).where("id", "=", report.id).where("churchId", "=", report.churchId).execute();
@@ -64,22 +66,35 @@ export class GroupReportRepo {
     return this.baseLoad(churchId).where("personId" as any, "=", personId).orderBy("updatedAt" as any, "desc").execute();
   }
 
+  private static parseJson(value: any): any {
+    if (typeof value !== "string") return value ?? null;
+    try { return JSON.parse(value); } catch { return null; }
+  }
+
+  private static parseTemplate(row: any): any {
+    if (!row) return null;
+    return { ...row, questions: GroupReportRepo.parseJson(row.questions) };
+  }
+
   public async loadTemplates(churchId: string, includeInactive = false): Promise<any[]> {
     let query = getDb().selectFrom("groupReportTemplates" as any).selectAll().where("churchId" as any, "=", churchId);
     if (!includeInactive) query = query.where("active" as any, "=", true);
-    return query.orderBy("name" as any).execute();
+    const rows = await query.orderBy("name" as any).execute();
+    return rows.map((r: any) => GroupReportRepo.parseTemplate(r));
   }
 
   public async loadTemplate(churchId: string, id: string): Promise<any> {
-    return (await getDb().selectFrom("groupReportTemplates" as any).selectAll().where("churchId" as any, "=", churchId).where("id" as any, "=", id).executeTakeFirst()) ?? null;
+    const row = await getDb().selectFrom("groupReportTemplates" as any).selectAll().where("churchId" as any, "=", churchId).where("id" as any, "=", id).executeTakeFirst();
+    return GroupReportRepo.parseTemplate(row) ?? null;
   }
 
   public async saveTemplate(template: GroupReportTemplate): Promise<GroupReportTemplate> {
+    const questions = template.questions?.length ? JSON.stringify(template.questions) : null;
     if (!template.id) {
       template.id = UniqueIdHelper.shortId();
-      await getDb().insertInto("groupReportTemplates" as any).values({ id: template.id, churchId: template.churchId, name: template.name, description: template.description || null, content: template.content, active: template.active !== false }).execute();
+      await getDb().insertInto("groupReportTemplates" as any).values({ id: template.id, churchId: template.churchId, name: template.name, description: template.description || null, content: template.content, questions, active: template.active !== false }).execute();
     } else {
-      await getDb().updateTable("groupReportTemplates" as any).set({ name: template.name, description: template.description || null, content: template.content, active: template.active !== false, updatedAt: new Date() }).where("churchId" as any, "=", template.churchId).where("id" as any, "=", template.id).execute();
+      await getDb().updateTable("groupReportTemplates" as any).set({ name: template.name, description: template.description || null, content: template.content, questions, active: template.active !== false, updatedAt: new Date() }).where("churchId" as any, "=", template.churchId).where("id" as any, "=", template.id).execute();
     }
     return template;
   }
@@ -90,7 +105,7 @@ export class GroupReportRepo {
 
   public convertToModel(_churchId: string, data: any): GroupReport {
     if (!data) return null;
-    return { ...data, active: data.active === true || data.active === 1 };
+    return { ...data, active: data.active === true || data.active === 1, answers: GroupReportRepo.parseJson(data.answers) };
   }
 
   public convertAllToModel(churchId: string, data: any[]): GroupReport[] {
