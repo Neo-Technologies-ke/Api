@@ -12,7 +12,8 @@ export class GroupController extends MembershipBaseController {
   @httpGet("/health/summary")
   public async getHealthSummary(req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
-      if (!au.checkAccess(Permissions.groupMembers.view)) return this.json([], 200);
+      const scoped = this.isScopedGroupAdmin(au);
+      if (!au.checkAccess(Permissions.groupMembers.view) && !scoped) return this.json([], 200);
       const db = getDb() as any;
       const rows = await sql<any>`
         SELECT gm.groupId, g.name, g.categoryName,
@@ -28,7 +29,8 @@ export class GroupController extends MembershipBaseController {
         GROUP BY gm.groupId, g.name, g.categoryName
       `.execute(db);
 
-      return (rows.rows || []).map((r: any) => {
+      const filtered = scoped ? (rows.rows || []).filter((r: any) => au.leaderGroupIds?.includes(r.groupId)) : (rows.rows || []);
+      return filtered.map((r: any) => {
         const count = Number(r.memberCount) || 0;
         const joins90 = Number(r.joins90) || 0;
         const churnRate90 = 0;
@@ -45,7 +47,7 @@ export class GroupController extends MembershipBaseController {
   @httpGet("/:id/health")
   public async getHealth(@requestParam("id") id: string, req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
-      if (!au.checkAccess(Permissions.groupMembers.view)) return this.json({}, 401);
+      if (!this.canViewGroup(au, id)) return this.json({}, 401);
       const db = getDb() as any;
 
       const result = await sql<any>`
@@ -137,7 +139,9 @@ export class GroupController extends MembershipBaseController {
   @httpGet("/tag/:tag")
   public async getByTag(@requestParam("tag") tag: string, req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
-      return this.repos.group.convertAllToModel(au.churchId, (await this.repos.group.loadByTag(au.churchId, tag)) as any[]);
+      let data = (await this.repos.group.loadByTag(au.churchId, tag)) as any[];
+      if (this.isScopedGroupAdmin(au)) data = data.filter((g) => au.leaderGroupIds?.includes(g.id));
+      return this.repos.group.convertAllToModel(au.churchId, data);
     });
   }
 
@@ -159,7 +163,8 @@ export class GroupController extends MembershipBaseController {
   @httpGet("/")
   public async getAll(req: express.Request, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
-      const data = await this.repos.group.loadAll(au.churchId);
+      let data = await this.repos.group.loadAll(au.churchId);
+      if (this.isScopedGroupAdmin(au)) data = data.filter((g: any) => au.leaderGroupIds?.includes(g.id));
       return this.repos.group.convertAllToModel(au.churchId, data);
     });
   }
@@ -168,8 +173,11 @@ export class GroupController extends MembershipBaseController {
   @httpPost("/")
   public async save(req: express.Request<{}, {}, Group[]>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
-      if (!au.checkAccess(Permissions.groups.edit)) return this.json({}, 401);
+      const scopedEdit = !au.checkAccess(Permissions.groups.edit) && au.checkAccess(Permissions.ownGroups.edit);
+      if (!au.checkAccess(Permissions.groups.edit) && !scopedEdit) return this.json({}, 401);
       else {
+        // Scoped admins may only update existing groups they lead — never create
+        if (scopedEdit && req.body.some((group) => !group.id || !au.leaderGroupIds?.includes(group.id))) return this.json({ error: "Access denied" }, 401);
         const promises: Promise<Group>[] = [];
         req.body.forEach((group) => {
           group.churchId = au.churchId;

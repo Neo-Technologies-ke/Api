@@ -12,6 +12,8 @@ export class Permissions extends BasePermissions {
 
   static groupReports = { view: { contentType: "Group Reports", action: "View" }, edit: { contentType: "Group Reports", action: "Edit" } };
 
+  static ownGroups = { view: { contentType: "Own Groups", action: "View" }, edit: { contentType: "Own Groups", action: "Edit" } };
+
   static people = { view: { contentType: "People", action: "View" }, viewMembers: { contentType: "People", action: "View Members" }, edit: { contentType: "People", action: "Edit" }, editSelf: { contentType: "People", action: "Edit Self" } };
 
   static forms = { admin: { contentType: "Forms", action: "Admin" }, edit: { contentType: "Forms", action: "Edit" } };
@@ -82,6 +84,8 @@ export const permissionsList: IPermission[] = [
   { apiName: "MembershipApi", section: "Plans", action: "Edit", displaySection: "Forms and Plans", displayAction: "Edit Plans" },
   { apiName: "MembershipApi", section: "Group Members", action: "Edit", displaySection: "People and Groups", displayAction: "Edit Group Members" },
   { apiName: "MembershipApi", section: "Groups", action: "Edit", displaySection: "People and Groups", displayAction: "Edit Groups" },
+  { apiName: "MembershipApi", section: "Own Groups", action: "View", displaySection: "People and Groups", displayAction: "View Own Group (Leaders Only)" },
+  { apiName: "MembershipApi", section: "Own Groups", action: "Edit", displaySection: "People and Groups", displayAction: "Manage Own Group (Leaders Only)" },
   { apiName: "MembershipApi", section: "Group Reports", action: "Edit", displaySection: "People and Groups", displayAction: "Edit Group Reports" },
   { apiName: "MembershipApi", section: "Group Reports", action: "View", displaySection: "People and Groups", displayAction: "View Group Reports" },
   { apiName: "MembershipApi", section: "Households", action: "Edit", displaySection: "People and Groups", displayAction: "Edit Households" },
@@ -142,6 +146,7 @@ export type ContentType =
   | "Plans"
   | "Group Members"
   | "Groups"
+  | "Own Groups"
   | "Group Reports"
   | "Donations"
   | "Attendance"

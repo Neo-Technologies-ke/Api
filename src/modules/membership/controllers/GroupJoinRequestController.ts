@@ -10,15 +10,17 @@ export class GroupJoinRequestController extends MembershipBaseController {
   @httpGet("/pending")
   public async getPending(req: express.Request, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
-      if (!au.checkAccess(Permissions.groupMembers.edit)) return this.json([], 200);
-      return this.repos.groupJoinRequest.loadPending(au.churchId);
+      const scoped = !au.checkAccess(Permissions.groupMembers.edit) && au.checkAccess(Permissions.ownGroups.edit);
+      if (!au.checkAccess(Permissions.groupMembers.edit) && !scoped) return this.json([], 200);
+      const pending = await this.repos.groupJoinRequest.loadPending(au.churchId);
+      return scoped ? (pending as any[]).filter((r) => au.leaderGroupIds?.includes(r.groupId)) : pending;
     });
   }
 
   @httpGet("/group/:groupId")
   public async getForGroup(@requestParam("groupId") groupId: string, req: express.Request, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
-      if (!au.checkAccess(Permissions.groupMembers.view)) return this.json([], 200);
+      if (!this.canViewGroup(au, groupId)) return this.json([], 200);
       return this.repos.groupJoinRequest.loadForGroup(au.churchId, groupId);
     });
   }
@@ -26,9 +28,9 @@ export class GroupJoinRequestController extends MembershipBaseController {
   @httpPost("/:id/approve")
   public async approve(@requestParam("id") id: string, req: express.Request, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
-      if (!au.checkAccess(Permissions.groupMembers.edit)) return this.json({}, 401);
       const request: GroupJoinRequest = await this.repos.groupJoinRequest.load(au.churchId, id);
       if (!request) return this.json({ error: "Not found" }, 404);
+      if (!this.canEditGroup(au, request.groupId)) return this.json({}, 401);
       request.status = "approved";
       await this.repos.groupJoinRequest.save(request);
       const gm: GroupMember = { churchId: au.churchId, groupId: request.groupId, personId: request.personId, leader: false };
@@ -40,9 +42,9 @@ export class GroupJoinRequestController extends MembershipBaseController {
   @httpPost("/:id/decline")
   public async decline(@requestParam("id") id: string, req: express.Request<{}, {}, { declineReason?: string }>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
-      if (!au.checkAccess(Permissions.groupMembers.edit)) return this.json({}, 401);
       const request: GroupJoinRequest = await this.repos.groupJoinRequest.load(au.churchId, id);
       if (!request) return this.json({ error: "Not found" }, 404);
+      if (!this.canEditGroup(au, request.groupId)) return this.json({}, 401);
       request.status = "declined";
       request.declineReason = req.body?.declineReason || null;
       await this.repos.groupJoinRequest.save(request);
@@ -65,7 +67,9 @@ export class GroupJoinRequestController extends MembershipBaseController {
   @httpDelete("/:id")
   public async delete(@requestParam("id") id: string, req: express.Request, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
-      if (!au.checkAccess(Permissions.groupMembers.edit)) return this.json({}, 401);
+      const request: GroupJoinRequest = await this.repos.groupJoinRequest.load(au.churchId, id);
+      if (!request) return this.json({}, 404);
+      if (!this.canEditGroup(au, request.groupId)) return this.json({}, 401);
       await this.repos.groupJoinRequest.delete(au.churchId, id);
       return {};
     });

@@ -180,7 +180,8 @@ export class EventController extends ContentBaseController {
   @httpPut("/:id")
   public async update(@requestParam("id") id: string, req: express.Request<{}, {}, Event>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
-      if (!au.checkAccess(Permissions.content.edit)) return this.json({}, 401);
+      const scopedEdit = req.body.groupId && au.checkAccess(Permissions.ownGroups.edit) && au.leaderGroupIds?.includes(req.body.groupId);
+      if (!au.checkAccess(Permissions.content.edit) && !scopedEdit) return this.json({}, 401);
       else {
         const event = req.body;
         event.churchId = au.churchId;
@@ -194,7 +195,9 @@ export class EventController extends ContentBaseController {
   @httpDelete("/:id")
   public async delete(@requestParam("id") id: string, req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
-      if (!au.checkAccess(Permissions.content.edit)) return this.json({}, 401);
+      const event = await this.repos.event.load(au.churchId, id);
+      const scopedEdit = event?.groupId && au.checkAccess(Permissions.ownGroups.edit) && au.leaderGroupIds?.includes(event.groupId);
+      if (!au.checkAccess(Permissions.content.edit) && !scopedEdit) return this.json({}, 401);
       else {
         await this.repos.event.delete(au.churchId, id);
         return this.json({});

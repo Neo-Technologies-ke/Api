@@ -44,6 +44,7 @@ export class GroupMemberController extends MembershipBaseController {
       let hasAccess = false;
       if (au.checkAccess(Permissions.groupMembers.view)) hasAccess = true;
       else if (req.query.groupId && au.groupIds && au.groupIds.includes(req.query.groupId.toString())) hasAccess = true;
+      else if (req.query.groupId && au.checkAccess(Permissions.ownGroups.view) && au.leaderGroupIds?.includes(req.query.groupId.toString())) hasAccess = true;
       else if (req.query.personId && au.personId === req.query.personId.toString()) hasAccess = true;
       if (!hasAccess) return this.json({}, 401);
       else {
@@ -61,7 +62,8 @@ export class GroupMemberController extends MembershipBaseController {
   public async save(req: express.Request<{}, {}, GroupMember[]>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
       if (!au.checkAccess(Permissions.groupMembers.edit)) {
-        return this.json({ error: "Unauthorized" }, 401);
+        const scopedEdit = au.checkAccess(Permissions.ownGroups.edit) && req.body.every((gm) => gm.groupId && au.leaderGroupIds?.includes(gm.groupId));
+        if (!scopedEdit) return this.json({ error: "Unauthorized" }, 401);
       }
 
       const promises: Promise<GroupMember>[] = [];
@@ -83,7 +85,11 @@ export class GroupMemberController extends MembershipBaseController {
   @httpDelete("/:id")
   public async delete(@requestParam("id") id: string, req: express.Request, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
-      if (!au.checkAccess(Permissions.groupMembers.edit)) return this.json({}, 401);
+      if (!au.checkAccess(Permissions.groupMembers.edit)) {
+        const member = await this.repos.groupMember.load(au.churchId, id);
+        const scopedEdit = member && au.checkAccess(Permissions.ownGroups.edit) && au.leaderGroupIds?.includes(member.groupId);
+        if (!scopedEdit) return this.json({}, 401);
+      }
       await this.repos.groupMember.delete(au.churchId, id);
       return {};
     });

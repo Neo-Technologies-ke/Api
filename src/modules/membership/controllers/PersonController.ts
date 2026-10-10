@@ -206,7 +206,9 @@ export class PersonController extends MembershipBaseController {
   @httpGet("/search")
   public async search(req: express.Request<{}, {}, null>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {
-      if (!au.checkAccess(Permissions.people.view) && !(await this.isMember(au.membershipStatus))) return this.json({}, 401);
+      // Scoped group admins may search the directory (basic fields only) to add members to groups they lead
+      const scopedGroupAdmin = au.checkAccess(Permissions.ownGroups.edit) && (au.leaderGroupIds?.length || 0) > 0;
+      if (!au.checkAccess(Permissions.people.view) && !scopedGroupAdmin && !(await this.isMember(au.membershipStatus))) return this.json({}, 401);
       else {
         let data = null;
         const email: string = req.query.email?.toString();

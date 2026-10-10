@@ -27,7 +27,8 @@ export class GroupServiceTimeController extends AttendanceBaseController {
   @httpPost("/")
   public async save(req: express.Request<{}, {}, GroupServiceTime[]>, res: express.Response): Promise<unknown> {
     return this.actionWrapper(req, res, async (au) => {
-      if (!au.checkAccess(Permissions.services.edit)) return this.json({}, 401);
+      const scopedEdit = au.checkAccess(Permissions.ownGroups.edit) && req.body.every((gst) => gst.groupId && au.leaderGroupIds?.includes(gst.groupId));
+      if (!au.checkAccess(Permissions.services.edit) && !scopedEdit) return this.json({}, 401);
       else {
         const promises: Promise<GroupServiceTime>[] = [];
         req.body.forEach((groupservicetime) => {
@@ -43,7 +44,9 @@ export class GroupServiceTimeController extends AttendanceBaseController {
   @httpDelete("/:id")
   public async delete(@requestParam("id") id: string, req: express.Request<{}, {}, null>, res: express.Response): Promise<unknown> {
     return this.actionWrapper(req, res, async (au) => {
-      if (!au.checkAccess(Permissions.services.edit)) return this.json({}, 401);
+      const existing = await this.repos.groupServiceTime.load(au.churchId, id);
+      const scopedEdit = existing && au.checkAccess(Permissions.ownGroups.edit) && au.leaderGroupIds?.includes((existing as any).groupId);
+      if (!au.checkAccess(Permissions.services.edit) && !scopedEdit) return this.json({}, 401);
       else {
         await this.repos.groupServiceTime.delete(au.churchId, id);
         return this.json({});
