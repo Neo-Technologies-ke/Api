@@ -33,6 +33,7 @@ export class BaseController extends CustomBaseController {
   public actionWrapper(req: express.Request, res: express.Response, action: (au: AuthenticatedUser) => Promise<any>) {
     return super.actionWrapper(req, res, async (au) => {
       (this as any).repos = await this.getRepos<any>();
+      await this.enrichGroupIds(au);
       const result = await action(au);
 
       // Auto-audit for mutations (POST to base route and DELETE with id)
@@ -67,6 +68,27 @@ export class BaseController extends CustomBaseController {
       // Return empty object instead of null for single entity queries
       return result === null ? {} : result;
     });
+  }
+
+  // JWT group/leader claims are baked at login and can go stale (e.g. older sessions that lost
+  // leader flags). Union them with live membership rows so scoped access always reflects the DB.
+  private async enrichGroupIds(au: AuthenticatedUser) {
+    if (!au?.personId || !au?.churchId) return;
+    try {
+      const membershipRepos = this.moduleName === "membership"
+        ? (this as any).repos
+        : await RepoManager.getRepos<any>("membership");
+      const memberships = (await membershipRepos.groupMember.loadForPerson(au.churchId, au.personId)) as any[];
+      const groupIds = new Set<string>(au.groupIds || []);
+      const leaderIds = new Set<string>(au.leaderGroupIds || []);
+      memberships.forEach((m) => {
+        if (!m?.groupId) return;
+        groupIds.add(m.groupId);
+        if (m.leader) leaderIds.add(m.groupId);
+      });
+      (au as any).groupIds = [...groupIds];
+      (au as any).leaderGroupIds = [...leaderIds];
+    } catch (e) { console.error("Failed to enrich group ids:", e); }
   }
 
   public actionWrapperAnon(req: express.Request, res: express.Response, action: () => Promise<any>) {
