@@ -64,7 +64,9 @@ export class GroupMemberRepo {
     }
     if (cat === "ministry") return "Ministry Leader";
     if (cat === "team") return "Team Leader";
-    if (categoryName) return `${categoryName} Leader`;
+    // Legacy rows occasionally carry a raw id in categoryName (e.g. "KWf12XydBGx")
+    // — never leak that into a human-facing title.
+    if (categoryName && !/^[A-Za-z0-9_-]{10,14}$/.test(categoryName)) return `${categoryName} Leader`;
     return "Leader";
   }
 
