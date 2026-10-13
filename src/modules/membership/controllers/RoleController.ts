@@ -17,6 +17,32 @@ export class RoleController extends MembershipBaseController {
     });
   }
 
+  // Leader-type options for group promotion. Returns only "group-scoped" roles —
+  // ones whose permissions are confined to Own Groups + People/Edit Self — so a
+  // group leader assigning a type can never escalate beyond group admin.
+  @httpGet("/groupleadertypes")
+  public async leaderTypes(req: express.Request<{}, {}, []>, res: express.Response): Promise<any> {
+    return this.actionWrapper(req, res, async (au) => {
+      const canEdit = au.checkAccess(Permissions.groupMembers.edit) || au.checkAccess(Permissions.ownGroups.edit);
+      if (!canEdit) return this.json({}, 401);
+      const roles: Role[] = await this.repos.role.loadByChurchId(au.churchId);
+      const perms: any[] = await this.repos.rolePermission.loadAll(au.churchId);
+      const byRole = new Map<string, any[]>();
+      perms.forEach((p) => {
+        if (!byRole.has(p.roleId)) byRole.set(p.roleId, []);
+        byRole.get(p.roleId).push(p);
+      });
+      const isGroupScoped = (list: any[]) => list.length > 0
+        && list.some((p) => p.apiName === "MembershipApi" && p.contentType === "Own Groups")
+        && list.every((p) => p.apiName === "MembershipApi"
+          && (p.contentType === "Own Groups" || (p.contentType === "People" && p.action === "Edit Self")));
+      const result = (roles || [])
+        .filter((r) => isGroupScoped(byRole.get(r.id) || []))
+        .map((r) => ({ id: r.id, name: r.name }));
+      return this.json(result, 200);
+    });
+  }
+
   @httpGet("/:id")
   public async loadById(@requestParam("id") id: string, req: express.Request<{}, {}, []>, res: express.Response): Promise<any> {
     return this.actionWrapper(req, res, async (au) => {

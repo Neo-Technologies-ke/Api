@@ -76,21 +76,24 @@ export class GroupMemberController extends MembershipBaseController {
       // Create userChurch records for members with matching users
       for (const gm of result) {
         await UserChurchHelper.createForGroupMember(au.churchId, gm.personId);
-        if (gm.leader && gm.leaderTitle) await this.assignRoleForLeaderTitle(au, gm);
+        if (gm.leader) await this.assignRoleForLeaderTitle(au, gm);
       }
 
       return this.repos.groupMember.convertAllToModel(au.churchId, result);
     });
   }
 
-  // When a leader is promoted with a typed title (e.g. "Village Coordinator",
-  // "PG ICT Coordinator"), grant them the matching role so the scoped admin
-  // permissions apply without a separate role-assignment step.
+  // When a leader is promoted, grant them the role matching their title (e.g.
+  // "Village Coordinator" -> "Village Coordinators") so scoped admin permissions
+  // apply without a separate role-assignment step. Leaders whose title has no
+  // matching role fall back to the baseline "Group Leaders" role — still scoped
+  // to their own groups only via leaderGroupIds.
   private async assignRoleForLeaderTitle(au: any, gm: GroupMember) {
     try {
       const norm = (s: string) => (s || "").toLowerCase().replace(/s\b/g, "").replace(/\s+/g, " ").trim();
       const roles: any[] = await this.repos.role.loadByChurchId(au.churchId);
-      const role = (roles || []).find((r) => norm(r.name) === norm(gm.leaderTitle));
+      const role = (roles || []).find((r) => gm.leaderTitle && norm(r.name) === norm(gm.leaderTitle))
+        || (roles || []).find((r) => norm(r.name) === "group leader");
       if (!role) return;
       const person: any = await this.repos.person.load(au.churchId, gm.personId);
       if (!person?.userId) return;
