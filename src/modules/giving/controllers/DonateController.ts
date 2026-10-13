@@ -507,7 +507,7 @@ export class DonateController extends GivingBaseController {
         }
 
         try {
-          await this.sendEmails(donationData.person.email, donationData?.church, donationData.funds, donationData?.amount, donationData?.interval, donationData?.billing_cycle_anchor, "one-time");
+          await this.sendEmails(donationData.person.email, donationData?.church, donationData.funds, donationData?.amount, donationData?.interval, donationData?.billing_cycle_anchor, "one-time", churchId, normalizedCurrency);
         } catch (emailError) {
           console.error("Donation completed but receipt email failed:", emailError);
         }
@@ -584,7 +584,7 @@ export class DonateController extends GivingBaseController {
         });
 
         await Promise.all(promises);
-        await this.sendEmails(person.email, req.body?.church, funds, amount, interval, billing_cycle_anchor, "recurring");
+        await this.sendEmails(person.email, req.body?.church, funds, amount, interval, billing_cycle_anchor, "recurring", churchId, normalizedCurrency);
 
         return { ...subscriptionResult.data, provider: gateway.provider };
       } catch (error) {
@@ -644,31 +644,49 @@ export class DonateController extends GivingBaseController {
     amount?: number,
     interval?: { interval_count: number; interval: string },
     billingCycleAnchor?: number,
-    donationType: "recurring" | "one-time" = "recurring"
+    donationType: "recurring" | "one-time" = "recurring",
+    churchId?: string,
+    currency?: string
   ) => {
     // Skip email if no recipient address
     if (!to) return;
 
+    const currencyCode = (currency || "KES").toUpperCase();
+    const formatMoney = (n: number) =>
+      currencyCode === "KES"
+        ? new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES" }).format(n)
+        : CurrencyHelper.formatCurrencyWithLocale(n, currencyCode);
+
+    // Clients post {id, amount} only — resolve fund names from the DB
+    const resolvedFunds = await Promise.all(
+      (funds || []).map(async (fund: any) => {
+        if (fund?.name) return fund;
+        const fundId = fund?.id || fund?.fundId;
+        const record = churchId && fundId ? await this.repos.fund.load(churchId, fundId).catch(() => null) : null;
+        return { ...fund, name: record?.name || "General Fund" };
+      })
+    );
+
     const contentRows: any[] = [];
     let totalFundAmount = 0;
 
-    funds.forEach((fund, index) => {
+    resolvedFunds.forEach((fund, index) => {
       totalFundAmount += fund.amount;
       if (donationType === "recurring") {
         const startDate = dayjs(billingCycleAnchor).format("MMM D, YYYY");
         contentRows.push(
-          `<tr>${index === 0 ? `<td style="font-size: 15px" rowspan="${funds.length}">${interval!.interval_count} ${interval!.interval}<BR><span style="font-size: 13px">(from ${startDate})</span></td>` : ""}<td style="font-size: 15px; text-overflow: ellipsis; overflow: hidden;">${fund.name}</td><td style="font-size: 15px">$${fund.amount}</td></tr>`
+          `<tr>${index === 0 ? `<td style="font-size: 15px" rowspan="${resolvedFunds.length}">${interval!.interval_count} ${interval!.interval}<BR><span style="font-size: 13px">(from ${startDate})</span></td>` : ""}<td style="font-size: 15px; text-overflow: ellipsis; overflow: hidden;">${fund.name}</td><td style="font-size: 15px">${formatMoney(fund.amount)}</td></tr>`
         );
       } else {
-        contentRows.push(`<tr><td style="font-size: 15px; text-overflow: ellipsis; overflow: hidden;">${fund.name}</td><td style="font-size: 15px">$${fund.amount}</td></tr>`);
+        contentRows.push(`<tr><td style="font-size: 15px; text-overflow: ellipsis; overflow: hidden;">${fund.name}</td><td style="font-size: 15px">${formatMoney(fund.amount)}</td></tr>`);
       }
     });
 
     const transactionFee = amount! - totalFundAmount;
 
-    const domain = `${church.subDomain}.lifereformationcentre.org`;
+    const domain = church?.subDomain ? `${church.subDomain}.lifereformationcentre.org` : "portal.lifereformationcentre.org";
 
-    const title = `${church?.logo ? `<img src="${church.logo}" alt="Logo: " style="width: 100%" /> ` : ""}${church.name}`;
+    const title = church?.name || "Life Reformation Centre";
 
     const recurringDonationContent =
       `
@@ -688,12 +706,12 @@ export class DonateController extends GivingBaseController {
             <tr style="border-top: solid #dee2e6 1px">
               <td></td>
               <th style="font-size: 15px">Transaction Fee</th>
-              <td>$${CurrencyHelper.formatCurrency(transactionFee)}</td>
+              <td>${formatMoney(transactionFee)}</td>
             </tr>
             <tr style="border-top: solid #dee2e6 1px">
               <td></td>
               <th style="font-size: 15px">Total</th>
-              <td>$${amount}</td>
+              <td>${formatMoney(amount!)}</td>
             </tr>
           `
       }
@@ -720,11 +738,11 @@ export class DonateController extends GivingBaseController {
           : `
             <tr style="border-top: solid #dee2e6 1px">
               <th style="font-size: 15px">Transaction Fee</th>
-              <td>$${CurrencyHelper.formatCurrency(transactionFee)}</td>
+              <td>${formatMoney(transactionFee)}</td>
             </tr>
             <tr style="border-top: solid #dee2e6 1px">
               <th style="font-size: 15px">Total</th>
-              <td>$${amount}</td>
+              <td>${formatMoney(amount!)}</td>
             </tr>
           `
       }
@@ -734,7 +752,7 @@ export class DonateController extends GivingBaseController {
 
     const contents = donationType === "recurring" ? recurringDonationContent : oneTimeDonationContent;
 
-    await EmailHelper.sendTemplatedEmail(Environment.supportEmail, to, title, church.churchURL as string, "Thank You For Donating", contents, "ChurchEmailTemplate.html");
+    await EmailHelper.sendTemplatedEmail(Environment.supportEmail, to, title, church?.churchURL || "https://portal.lifereformationcentre.org", "Thank You For Donating", contents, "ChurchEmailTemplate.html");
   };
 
   private logDonation = async (donationData: Donation, fundData: FundDonation[]) => {
